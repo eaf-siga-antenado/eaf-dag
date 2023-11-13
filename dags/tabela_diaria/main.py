@@ -52,7 +52,7 @@ def cria_tabela_e_notificacao():
     conn.commit()
         
 default_args = {
-    'start_date': dt.datetime(2023, 11, 13, 6, 0, 0),
+    'start_date': dt.datetime(2023, 11, 1, 6, 0, 0),
     'retries': 3,
     'retry_delay': dt.timedelta(minutes=3)
 }
