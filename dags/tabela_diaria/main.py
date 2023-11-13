@@ -7,32 +7,28 @@ def mensagem_sucesso():
     import requests
     import datetime as dt
     from airflow.models import Variable
-
-    TOKEN = Variable.get("TELEGRAM_DAILY_STATUS_TOKEN")
-    chat_id = Variable.get("TELEGRAM_DAILY_STATUS_ID")
-
+    # TOKEN = Variable.get("TELEGRAM_DAILY_STATUS_TOKEN")
+    # chat_id = Variable.get("TELEGRAM_DAILY_STATUS_ID")
     data_atual = dt.datetime.now()
     data_formatada = data_atual.strftime('%d-%m-%Y')
     message = f"EAF-TVRO - Tabela dos gráficos: \n\n Sucesso ao criar a tabela no dia {data_formatada}"
-
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
-    requests.get(url).json()
+    print(message)
+    # url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
+    # requests.get(url).json()
 
 def mensagem_falha():
 
     import requests
     import datetime as dt
     from airflow.models import Variable
-
-    TOKEN = Variable.get("TELEGRAM_DAILY_STATUS_TOKEN")
-    chat_id = Variable.get("TELEGRAM_DAILY_STATUS_ID")
-
+    # TOKEN = Variable.get("TELEGRAM_DAILY_STATUS_TOKEN")
+    # chat_id = Variable.get("TELEGRAM_DAILY_STATUS_ID")
     data_atual = dt.datetime.now()
     data_formatada = data_atual.strftime('%d-%m-%Y')
     message = f"EAF-TVRO - Tabela dos gráficos: \n\n Falha ao criar a tabela no dia {data_formatada}"
-
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
-    requests.get(url).json()
+    print(message)
+    # url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
+    # requests.get(url).json()
 
 def cria_tabela_e_notificacao():
 
