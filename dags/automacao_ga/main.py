@@ -67,7 +67,7 @@ def extrair_dados_ga():
     dimensions=[Dimension(name="date"), Dimension(name="customEvent:event_label"), Dimension(name="region"),  Dimension(name="city"),],
     metrics=[Metric(name="eventCount"),],
     order_bys=[OrderBy(dimension={'dimension_name': 'date'}),],
-    date_ranges=[DateRange(start_date='2023-11-04', end_date='2023-11-14')],)
+    date_ranges=[DateRange(start_date=dia_anterior, end_date=dia_anterior)],)
 
     client = BetaAnalyticsDataClient(credentials=chave)
 
