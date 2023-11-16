@@ -120,7 +120,7 @@ default_args = {
 }
 
 dag = DAG(
-    'automacao_GA',
+    'google_analytics_events',
     default_args=default_args,
     schedule_interval='20 9 * * *',
     catchup=False
