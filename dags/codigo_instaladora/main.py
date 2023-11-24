@@ -28,7 +28,7 @@ def extrair_dados_api():
 
     url = "https://sigaantenado.freshdesk.com/api/v2/groups/"
     content_type = Variable.get("CONTENT_TYPE")
-    authorization_basic = Variable.getenv("AUTHORIZATION_BASIC")
+    authorization_basic = Variable.get("AUTHORIZATION_BASIC")
     headers = {
         "Content-Type": content_type,
         "Authorization": authorization_basic
