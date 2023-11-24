@@ -141,6 +141,10 @@ def tratando_dados(**kwargs):
     df_final['InstaladoraIBGE'] = df_final['fornecedor'].str.upper() + df_final['ibge'].astype(str)
     df_final['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
 
+    # remover registro, pois o id_grupo 150000383508 está duplicado
+    condicao = (df_final['ibge'] == 5201702) & (df_final['municipio'] == 'Aragarças') & (df_final['id_grupo'] == 150000383508)
+    df_final = df_final[~condicao]
+
     return df_final
 
 def envio_banco_dados(**kwargs):
