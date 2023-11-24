@@ -8,11 +8,11 @@ from sqlalchemy import create_engine, text
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.python_operator import PythonVirtualenvOperator
 
-def extrair_instaladora(valor):
-    partes = valor.split(' - ')
-    return partes[0].strip().capitalize()
-
 def tratamento_dados():
+    def extrair_instaladora(valor):
+        partes = valor.split(' - ')
+        return partes[0].strip().capitalize()
+    
     import pandas as pd
     from datetime import date
 
