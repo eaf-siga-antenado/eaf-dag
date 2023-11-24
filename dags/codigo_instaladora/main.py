@@ -70,9 +70,9 @@ def envio_banco_dados(**kwargs):
     df.to_sql("grupo_instaladora", engine, if_exists='replace', schema='eaf_tvro', index=False)
 
 default_args = {
-    'start_date': datetime(2023, 8, 18, 6, 0, 0)
-    # 'retries': 3,
-    # 'retry_delay': timedelta(minutes=5)
+    'start_date': datetime(2023, 8, 18, 5, 0, 0),
+    'retries': 3,
+    'retry_delay': timedelta(minutes=10)
 }
 
 dag = DAG(
