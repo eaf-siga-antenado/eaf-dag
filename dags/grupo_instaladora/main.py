@@ -78,7 +78,7 @@ default_args = {
 dag = DAG(
     'grupo_instaladoras',
     default_args=default_args,
-    schedule_interval='20 9 * * *',
+    schedule_interval='0 8 * * *',
     catchup=False
 )
 
