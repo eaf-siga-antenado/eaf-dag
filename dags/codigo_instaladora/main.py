@@ -24,6 +24,7 @@ def tratamento_dados():
 
 def extrair_dados_api():
     import requests
+    import pandas as pd
     from airflow.models import Variable
 
     url = "https://sigaantenado.freshdesk.com/api/v2/groups/"
@@ -85,7 +86,7 @@ extrair_dados_api = PythonVirtualenvOperator(
     task_id='extrair_dados',
     python_callable=extrair_dados_api,
     system_site_packages=True,
-    requirements='requests',
+    requirements=['requests', 'pandas'],
     dag=dag
 )
 
