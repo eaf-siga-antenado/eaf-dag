@@ -104,11 +104,13 @@ def status_api():
 
 def extrair_dados_api():
 
+    import os
     import json
     import requests
     import pandas as pd
     from airflow.models import Variable
     from datetime import datetime, timedelta
+    from concurrent.futures import ThreadPoolExecutor
     
     login = json.loads(Variable.get("api_datametrica"))
 
@@ -135,11 +137,18 @@ def extrair_dados_api():
     numero_paginas = response_recursos.json()['totalPages']
 
     final = pd.DataFrame()
-    for i in range(1, numero_paginas+1):
-        params['pagina'] = i
+
+    def fetch_data(page):
+        params['pagina'] = page
+        print(params)
         response_recursos = requests.post(url_recursos_protegidos, headers=headers, json=params)
         df = pd.DataFrame(response_recursos.json()['content'])
-        final = pd.concat([df, final], ignore_index=True)
+        return df
+
+    with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
+        dfs = executor.map(fetch_data, range(1, numero_paginas+1))
+
+    final = pd.concat(list(dfs), ignore_index=True)
     
     return final
 
@@ -166,13 +175,13 @@ def envio_banco_dados(**kwargs):
 default_args = {
     'start_date': datetime(2023, 8, 1, 6, 0, 0),
     'retries': 2,
-    'retry_delay': timedelta(hours=1)
+    'retry_delay': timedelta(minutes=5)
 }
 
 dag = DAG(
     'ura_datametrica',
     default_args=default_args,
-    schedule_interval='0 13 * * *',
+    schedule_interval='0 16 * * *',
     catchup=False
 )
 
