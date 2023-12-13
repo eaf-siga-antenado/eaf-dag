@@ -9,18 +9,6 @@ from sqlalchemy import create_engine, text
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.python_operator import PythonVirtualenvOperator
 
-def tratamento_dados(**kwargs):
-    def extrair_instaladora(valor):
-        partes = valor.split(' - ')
-        return partes[0].strip().capitalize()
-
-    ti = kwargs['ti']
-    df = ti.xcom_pull(task_ids='extrair_dados_api')
-    df['instaladora'] = df['name'].apply(extrair_instaladora)
-    df.drop(columns='name', inplace=True)
-    df['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
-    return df
-
 def extrair_dados_api():
     import requests
     import pandas as pd
@@ -55,12 +43,21 @@ def extrair_dados_api():
         page += 1
     
     df_groups = pd.DataFrame(groups)
+
+    def extrair_instaladora(valor):
+        partes = valor.split(' - ')
+        return partes[0].strip().capitalize()
+
+    df_groups['instaladora'] = df_groups['name'].apply(extrair_instaladora)
+    df_groups.drop(columns='name', inplace=True)
+    df_groups['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
+
     return df_groups
 
 def envio_banco_dados(**kwargs):
 
     ti = kwargs['ti']
-    df = ti.xcom_pull(task_ids='tratamento_dados')
+    df = ti.xcom_pull(task_ids='extrair_dados_api')
     server = Variable.get('DBSERVER')
     database = Variable.get('DATABASE')
     username = Variable.get('DBUSER')
@@ -69,9 +66,9 @@ def envio_banco_dados(**kwargs):
     df.to_sql("grupo_instaladora", engine, if_exists='replace', schema='eaf_tvro', index=False)
 
 default_args = {
-    'start_date': datetime(2023, 8, 18, 5, 0, 0),
-    'retries': 3,
-    'retry_delay': timedelta(minutes=10)
+    'start_date': datetime(2023, 8, 18, 5, 0, 0)
+    # 'retries': 3,
+    # 'retry_delay': timedelta(minutes=10)
 }
 
 dag = DAG(
@@ -95,10 +92,4 @@ envio_banco_dados = PythonOperator(
     dag=dag
 )
 
-tratamento_dados = PythonOperator(
-    task_id='tratamento_dados',
-    python_callable=tratamento_dados,
-    dag=dag
-) 
-
-extrair_dados_api >> tratamento_dados >> envio_banco_dados
+extrair_dados_api >> envio_banco_dados
