@@ -53,21 +53,12 @@ def extrair_dados_api():
     df_groups.drop(columns='name', inplace=True)
     df_groups['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
     
-    print('EXIBE INFORMAÇÕES DO DATAFRAME:')
-    print(df_groups.head(20))
-
-    return df_groups
-
-def envio_banco_dados(**kwargs):
-
-    ti = kwargs['ti']
-    df = ti.xcom_pull(task_ids='extrair_dados_api')
     server = Variable.get('DBSERVER')
     database = Variable.get('DATABASE')
     username = Variable.get('DBUSER')
     password = Variable.get('DBPASSWORD')
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
-    df.to_sql("grupo_instaladora", engine, if_exists='replace', schema='eaf_tvro', index=False)
+    df_groups.to_sql("grupo_instaladora", engine, if_exists='replace', schema='eaf_tvro', index=False)
 
 default_args = {
     'start_date': datetime(2023, 8, 18, 5, 0, 0)
@@ -90,10 +81,4 @@ extrair_dados_api = PythonVirtualenvOperator(
     dag=dag
 )
 
-envio_banco_dados = PythonOperator(
-    task_id='envio_banco_dados',
-    python_callable=envio_banco_dados,
-    dag=dag
-)
-
-extrair_dados_api >> envio_banco_dados
+extrair_dados_api 
