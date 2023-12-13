@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 from airflow import DAG
 from datetime import datetime
@@ -9,6 +10,9 @@ from airflow.operators.python_operator import PythonOperator
 from airflow.operators.python_operator import PythonVirtualenvOperator
 
 def tratamento_dados():
+    print('PARTE DO TRATAMENTO')
+    print(f'onde estou {os.getcwd()}')
+    print(f'arquivos que tem aqui {os.listdir()}')
     def extrair_instaladora(valor):
         partes = valor.split(' - ')
         return partes[0].strip().capitalize()
@@ -23,6 +27,7 @@ def tratamento_dados():
     return df
 
 def extrair_dados_api():
+    import os
     import requests
     import pandas as pd
     from airflow.models import Variable
@@ -56,7 +61,10 @@ def extrair_dados_api():
         page += 1
     
     df_groups = pd.DataFrame(groups)
+    print(f'arquivos antes de salvar {os.listdir()}')
     df_groups.to_csv("grupos.csv", index=False, mode='w', encoding='utf-8', header=True)
+    print(f'arquivos depois de salvar {os.listdir()}')
+    print(f'onde estou {os.getcwd()}')
 
 def envio_banco_dados(**kwargs):
 
