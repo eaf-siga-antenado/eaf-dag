@@ -52,6 +52,9 @@ def extrair_dados_api():
     df_groups['instaladora'] = df_groups['name'].apply(extrair_instaladora)
     df_groups.drop(columns='name', inplace=True)
     df_groups['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
+    
+    print('EXIBE INFORMAÇÕES DO DATAFRAME:')
+    print(df_groups.head(20))
 
     return df_groups
 
