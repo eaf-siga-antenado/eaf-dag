@@ -12,6 +12,7 @@ from airflow.operators.python_operator import PythonVirtualenvOperator
 def extrair_dados_api():
     import requests
     import pandas as pd
+    from datetime import date
     from airflow.models import Variable
 
     url = "https://sigaantenado.freshdesk.com/api/v2/groups/"
