@@ -14,6 +14,7 @@ def extrair_dados_api():
     import pandas as pd
     from datetime import date
     from airflow.models import Variable
+    from sqlalchemy import create_engine, text
 
     url = "https://sigaantenado.freshdesk.com/api/v2/groups/"
     content_type = Variable.get("CONTENT_TYPE")
