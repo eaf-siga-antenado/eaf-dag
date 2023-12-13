@@ -1,6 +1,6 @@
-import os
 import pandas as pd
 from airflow import DAG
+from datetime import date
 from datetime import datetime
 from datetime import timedelta
 from airflow.models import Variable
@@ -9,25 +9,19 @@ from sqlalchemy import create_engine, text
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.python_operator import PythonVirtualenvOperator
 
-def tratamento_dados():
-    print('PARTE DO TRATAMENTO')
-    print(f'onde estou {os.getcwd()}')
-    print(f'arquivos que tem aqui {os.listdir()}')
+def tratamento_dados(**kwargs):
     def extrair_instaladora(valor):
         partes = valor.split(' - ')
         return partes[0].strip().capitalize()
-    
-    import pandas as pd
-    from datetime import date
 
-    df = pd.read_csv('grupos.csv')
+    ti = kwargs['ti']
+    df = ti.xcom_pull(task_ids='extrair_dados_api')
     df['instaladora'] = df['name'].apply(extrair_instaladora)
     df.drop(columns='name', inplace=True)
     df['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
     return df
 
 def extrair_dados_api():
-    import os
     import requests
     import pandas as pd
     from airflow.models import Variable
@@ -61,10 +55,7 @@ def extrair_dados_api():
         page += 1
     
     df_groups = pd.DataFrame(groups)
-    print(f'arquivos antes de salvar {os.listdir()}')
-    df_groups.to_csv("grupos.csv", index=False, mode='w', encoding='utf-8', header=True)
-    print(f'arquivos depois de salvar {os.listdir()}')
-    print(f'onde estou {os.getcwd()}')
+    return df_groups
 
 def envio_banco_dados(**kwargs):
 
@@ -78,9 +69,9 @@ def envio_banco_dados(**kwargs):
     df.to_sql("grupo_instaladora", engine, if_exists='replace', schema='eaf_tvro', index=False)
 
 default_args = {
-    'start_date': datetime(2023, 8, 18, 5, 0, 0)
-    # 'retries': 3,
-    # 'retry_delay': timedelta(minutes=10)
+    'start_date': datetime(2023, 8, 18, 5, 0, 0),
+    'retries': 3,
+    'retry_delay': timedelta(minutes=10)
 }
 
 dag = DAG(
@@ -104,11 +95,9 @@ envio_banco_dados = PythonOperator(
     dag=dag
 )
 
-tratamento_dados = PythonVirtualenvOperator(
+tratamento_dados = PythonOperator(
     task_id='tratamento_dados',
     python_callable=tratamento_dados,
-    system_site_packages=True,
-    requirements='pandas',
     dag=dag
 ) 
 
