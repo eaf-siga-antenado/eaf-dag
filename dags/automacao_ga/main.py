@@ -122,7 +122,7 @@ default_args = {
 dag = DAG(
     'google_analytics_events',
     default_args=default_args,
-    schedule_interval='20 9 * * *',
+    schedule_interval='20 12 * * *',
     catchup=False
 )
 
