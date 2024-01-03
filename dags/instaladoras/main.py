@@ -26,7 +26,7 @@ def extrair_ibge_banco():
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    consulta_sql = 'SELECT cIBGE, fase FROM eaf_tvro.ibge'
+    consulta_sql = 'SELECT CAST(cIBGE AS int) cIBGE, fase FROM eaf_tvro.ibge'
     resultado = session.execute(text(consulta_sql))
     ibge = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
     ibge.rename(columns={'cIBGE': 'ibge'}, inplace=True)
