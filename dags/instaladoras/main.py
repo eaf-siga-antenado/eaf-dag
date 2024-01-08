@@ -137,7 +137,7 @@ def tratando_dados(**kwargs):
     df_final['id_grupo'] = df_final['id_grupo'].astype('int64')
     df_final['id_grupo'] = df_final['id_grupo'].astype(str)
     df_final = df_final.merge(base_ibge, how='left', on='ibge')
-    df_final = df_final[df_final['instalacoes_dia'] > 0]
+    # df_final = df_final[df_final['instalacoes_dia'] > 0]
     df_final['InstaladoraIBGE'] = df_final['fornecedor'].str.upper() + df_final['ibge'].astype(str)
     df_final['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
 
