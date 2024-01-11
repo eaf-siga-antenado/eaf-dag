@@ -49,15 +49,16 @@ def new_agendados_semana_atual():
     new_agendados_semana_atual = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
     new_agendados_semana_atual.head()
 
-    print(len(new_agendados_semana_atual))
-    print(new_agendados_semana_atual.head(10))
+    # print(len(new_agendados_semana_atual))
+    # print(new_agendados_semana_atual.head(10))
 
     return new_agendados_semana_atual
 
-# def tratando_dados(**kwargs):
-#     ti = kwargs['ti']
-#     base_ibge = ti.xcom_pull(task_ids='new_agendados_semana_atual')
-
+def imprimir_informacao(**kwargs):
+    ti = kwargs['ti']
+    base_ibge = ti.xcom_pull(task_ids='new_agendados_semana_atual')
+    print(len(base_ibge))
+    print(base_ibge.head(10))
 
 # def envio_banco_dados(**kwargs):
 
@@ -97,11 +98,11 @@ dag = DAG(
 #     dag=dag
 # ) 
 
-# tratando_dados = PythonOperator(
-#     task_id='tratando_dados',
-#     python_callable=tratando_dados,
-#     dag=dag
-# ) 
+imprimir_informacao = PythonOperator(
+    task_id='imprimir_informacao',
+    python_callable=imprimir_informacao,
+    dag=dag
+) 
 
 new_agendados_semana_atual = PythonOperator(
     task_id='new_agendados_semana_atual',
@@ -109,7 +110,4 @@ new_agendados_semana_atual = PythonOperator(
     dag=dag
 ) 
 
-new_agendados_semana_atual
-
-
-# extrair_dados_api >>  >> tratando_dados >> envio_banco_dados 
+new_agendados_semana_atual >> imprimir_informacao
