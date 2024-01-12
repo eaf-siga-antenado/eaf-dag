@@ -9,6 +9,29 @@ from airflow.models import Variable
 from sqlalchemy import create_engine
 from airflow.operators.python_operator import PythonOperator
 
+def calcular_variacao_agendamentos(row):
+    if (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) > 20:
+        if row['new_agendados_semana_anterior'] == 0:
+            return 1
+        else:
+            return (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) / row['new_agendados_semana_anterior']
+    else:
+        return 0
+
+# junta as informações de new_agendados_semana_anterior e new_agendados_semana_atual
+def cria_df_final(**kwargs):
+    ti = kwargs['ti']
+    new_agendados_semana_atual = ti.xcom_pull(task_ids='new_agendados_semana_atual')
+    new_agendados_semana_anterior = ti.xcom_pull(task_ids='new_agendados_semana_anterior')
+    df_final = new_agendados_semana_atual.merge(new_agendados_semana_anterior, on='ibge', how='left')
+    df_final = df_final[['ibge', 'regiao', 'Nome_Cidade', 'qtd_domicilios', 'new_agendados_semana_anterior', 'new_agendados_semana_atual']]
+    df_final.fillna(0, inplace=True)
+    df_final['new_agendados_semana_anterior'] = df_final['new_agendados_semana_anterior'].astype(int)
+    df_final['variacao_agendamentos_semana'] = df_final.apply(calcular_variacao_agendamentos, axis=1)
+    print('exibe todas as colunas que existe no DF:')
+    print(df_final.columns)
+    print(f'tamanho: {len(df_final)}')
+
 def iba_semana_atual():
     import pandas as pd
     from airflow.models import Variable
@@ -412,4 +435,12 @@ iba_semana_atual = PythonOperator(
     dag=dag
 ) 
 
-[new_agendados_semana_atual, new_agendados_semana_anterior, lista_cidades, iba_semana_anterior, iba_semana_atual] >> imprimir_informacao
+cria_df_final = PythonOperator(
+    task_id='cria_df_final',
+    python_callable=cria_df_final,
+    dag=dag
+) 
+
+[new_agendados_semana_atual, new_agendados_semana_anterior] >> cria_df_final
+
+# [new_agendados_semana_atual, new_agendados_semana_anterior, lista_cidades, iba_semana_anterior, iba_semana_atual] >> imprimir_informacao
