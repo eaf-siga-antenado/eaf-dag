@@ -17,6 +17,24 @@ def calcular_variacao_agendamentos(row):
             return (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) / row['new_agendados_semana_anterior']
     else:
         return 0
+    
+# função que faz os left join, juntando tudo no df_final
+def juntar_tudo_df_final(**kwargs):
+    ti = kwargs['ti']
+    ibas = ti.xcom_pull(task_ids='cria_df_ibas')
+    cadunico = ti.xcom_pull(task_ids='cadunico')
+    lista_cidades = ti.xcom_pull(task_ids='lista_cidades')
+    df_final = ti.xcom_pull(task_ids='cria_df_final')
+    df_final = df_final.merge(ibas, how='left', on='ibge')
+    df_final = df_final.merge(cadunico, how='left', on='ibge')
+    df_final = df_final.merge(lista_cidades, how='left', on='ibge')
+
+    print(f'tamanho do df {len(df_final)}')
+    print(f'todas as colunas {df_final.columns}')
+    print('algumas informações')
+    print(df_final.head(20))
+
+    return df_final
 
 # junta as informações de new_agendados_semana_anterior e new_agendados_semana_atual
 def cria_df_final(**kwargs):
@@ -28,9 +46,15 @@ def cria_df_final(**kwargs):
     df_final.fillna(0, inplace=True)
     df_final['new_agendados_semana_anterior'] = df_final['new_agendados_semana_anterior'].astype(int)
     df_final['variacao_agendamentos_semana'] = df_final.apply(calcular_variacao_agendamentos, axis=1)
-    print('exibe todas as colunas que existe no DF:')
-    print(df_final.columns)
-    print(f'tamanho: {len(df_final)}')
+    return df_final
+
+# junta as informações de iba_semana_anterior e iba_semana_atual
+def cria_df_ibas(**kwargs):
+    ti = kwargs['ti']
+    iba_semana_anterior = ti.xcom_pull(task_ids='iba_semana_anterior')
+    iba_semana_atual = ti.xcom_pull(task_ids='iba_semana_atual')
+    ibas = iba_semana_anterior.merge(iba_semana_atual, how='left', on='ibge')
+    return ibas
 
 def iba_semana_atual():
     import pandas as pd
@@ -236,6 +260,41 @@ def iba_semana_anterior():
     iba_semana_anterior = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
     return iba_semana_anterior
 
+def cadunico():
+    import pandas as pd
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    consulta_sql = '''
+    SELECT 
+        CAST(ibge AS varchar) ibge,
+        familias qtd_cadunico
+    FROM [eaf_tvro].[cadunico]
+    '''
+    resultado = session.execute(text(consulta_sql))
+    cadunico = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    return cadunico
+
+def cria_coluna_curva(value):
+    if value > 9:
+        return 'Long Tail'
+    elif value > 2:
+        return 'Decrescente'
+    elif value > 0:
+        return 'Crescente'
+    return None
+
 def lista_cidades():
     import pandas as pd
     from airflow.models import Variable
@@ -263,6 +322,15 @@ def lista_cidades():
     '''
     resultado = session.execute(text(consulta_sql))
     lista_cidades = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    lista_de_cidades['diferenca_em_meses'] = lista_de_cidades['diferenca_em_meses'].fillna(0)
+    lista_de_cidades['diferenca_em_meses'] = lista_de_cidades['diferenca_em_meses'].astype(int)
+
+    # criando a coluna de curva
+    lista_de_cidades['curva'] = lista_de_cidades['diferenca_em_meses'].apply(cria_coluna_curva)
+
+    # removendo registros onde a curva é nula
+    lista_de_cidades = lista_de_cidades[~lista_de_cidades['curva'].isna()]
+    lista_de_cidades['ibge'] = lista_de_cidades['ibge'].astype('str')
     return lista_cidades
 
 def new_agendados_semana_anterior():
@@ -441,6 +509,26 @@ cria_df_final = PythonOperator(
     dag=dag
 ) 
 
+cria_df_ibas = PythonOperator(
+    task_id='cria_df_ibas',
+    python_callable=cria_df_ibas,
+    dag=dag
+) 
+
+juntar_tudo_df_final = PythonOperator(
+    task_id='juntar_tudo_df_final',
+    python_callable=juntar_tudo_df_final,
+    dag=dag
+) 
+
+cadunico = PythonOperator(
+    task_id='cadunico',
+    python_callable=cadunico,
+    dag=dag
+) 
+
 [new_agendados_semana_atual, new_agendados_semana_anterior] >> cria_df_final
 
-# [new_agendados_semana_atual, new_agendados_semana_anterior, lista_cidades, iba_semana_anterior, iba_semana_atual] >> imprimir_informacao
+[iba_semana_anterior, iba_semana_atual] >> cria_df_ibas
+
+[cria_df_final, cria_df_ibas, lista_cidades, cadunico] >> juntar_tudo_df_final
