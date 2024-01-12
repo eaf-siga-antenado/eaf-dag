@@ -182,7 +182,8 @@ dag = DAG(
 imprimir_informacao = PythonOperator(
     task_id='imprimir_informacao',
     python_callable=imprimir_informacao,
-    dag=dag
+    dag=dag,
+    trigger_rule='one_success'
 ) 
 
 new_agendados_semana_atual = PythonOperator(
@@ -200,8 +201,7 @@ new_agendados_semana_anterior = PythonOperator(
 lista_cidades = PythonOperator(
     task_id='lista_cidades',
     python_callable=lista_cidades,
-    dag=dag,
-    trigger_rule='one_success'
+    dag=dag
 ) 
 
 [new_agendados_semana_atual, new_agendados_semana_anterior, lista_cidades] >> imprimir_informacao
