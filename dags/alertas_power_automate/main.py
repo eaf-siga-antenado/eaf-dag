@@ -295,7 +295,7 @@ def cria_coluna_curva(value):
         return 'Crescente'
     return None
 
-def lista_cidades():
+def lista_de_cidades():
     import pandas as pd
     from airflow.models import Variable
     from sqlalchemy.orm import sessionmaker
@@ -321,7 +321,7 @@ def lista_cidades():
     FROM eaf_tvro.lista_cidades
     '''
     resultado = session.execute(text(consulta_sql))
-    lista_cidades = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    lista_de_cidades = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
     lista_de_cidades['diferenca_em_meses'] = lista_de_cidades['diferenca_em_meses'].fillna(0)
     lista_de_cidades['diferenca_em_meses'] = lista_de_cidades['diferenca_em_meses'].astype(int)
 
@@ -331,7 +331,7 @@ def lista_cidades():
     # removendo registros onde a curva é nula
     lista_de_cidades = lista_de_cidades[~lista_de_cidades['curva'].isna()]
     lista_de_cidades['ibge'] = lista_de_cidades['ibge'].astype('str')
-    return lista_cidades
+    return lista_de_cidades
 
 def new_agendados_semana_anterior():
     import pandas as pd
@@ -455,9 +455,9 @@ new_agendados_semana_anterior = PythonOperator(
     dag=dag,
 ) 
 
-lista_cidades = PythonOperator(
-    task_id='lista_cidades',
-    python_callable=lista_cidades,
+lista_de_cidades = PythonOperator(
+    task_id='lista_de_cidades',
+    python_callable=lista_de_cidades,
     dag=dag
 ) 
 
