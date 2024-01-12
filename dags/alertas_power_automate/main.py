@@ -201,6 +201,7 @@ lista_cidades = PythonOperator(
     task_id='lista_cidades',
     python_callable=lista_cidades,
     dag=dag,
+    trigger_rule='one_success'
 ) 
 
 [new_agendados_semana_atual, new_agendados_semana_anterior, lista_cidades] >> imprimir_informacao
