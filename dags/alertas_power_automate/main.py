@@ -501,4 +501,4 @@ cadunico = PythonOperator(
 
 [iba_semana_anterior, iba_semana_atual] >> cria_df_ibas
 
-[cria_df_final, cria_df_ibas, lista_cidades, cadunico] >> juntar_tudo_df_final
+[cria_df_final, cria_df_ibas, lista_de_cidades, cadunico] >> juntar_tudo_df_final
