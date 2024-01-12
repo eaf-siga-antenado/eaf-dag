@@ -9,6 +9,78 @@ from airflow.models import Variable
 from sqlalchemy import create_engine
 from airflow.operators.python_operator import PythonOperator
 
+def lista_cidades():
+    import pandas as pd
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    consulta_sql = '''
+    SELECT 
+        [cód. IBGE] ibge,
+        Município municipio,
+        FASE fase,
+        [INÍCIO DE CAMPANHA] inicio_campanha,
+        DATEDIFF(MONTH, [INÍCIO DE CAMPANHA], GETDATE()) diferenca_em_meses
+    FROM eaf_tvro.lista_cidades
+    '''
+    resultado = session.execute(text(consulta_sql))
+    lista_cidades = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    lista_cidades.head()
+
+    # print(len(lista_cidades))
+    # print(lista_cidades.head(10))
+
+    return lista_cidades
+
+def new_agendados_semana_anterior():
+    import pandas as pd
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    consulta_sql = '''
+    SELECT
+        t.IBGE ibge,
+        COUNT(t.IDdoticket) new_agendados_semana_anterior
+    FROM [eaf_tvro].[ticket_view] t
+    LEFT JOIN [eaf_tvro].[ibge]
+    ON t.IBGE = ibge.cIBGE
+    WHERE (CAST(Horadacriação AS DATE) >= CAST(DATEADD(DAY, -16, GETDATE()) AS DATE) AND CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE))
+    AND LOWER(Assunto) NOT LIKE '%zendesk%'
+    AND Status IN ('2', '7', '8', '10', '11', '12', '13') AND DataHoraAgendamento IS NOT NULL AND StatusdaInstalação <> 'Remarcada Fornecedor' AND t.IBGE <> ''
+    GROUP BY
+    t.IBGE
+    '''
+    resultado = session.execute(text(consulta_sql))
+    new_agendados_semana_anterior = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    new_agendados_semana_anterior.head()
+
+    # print(len(new_agendados_semana_anterior))
+    # print(new_agendados_semana_anterior.head(10))
+
+    return new_agendados_semana_anterior
+
 def new_agendados_semana_atual():
 
     import pandas as pd
@@ -56,9 +128,18 @@ def new_agendados_semana_atual():
 
 def imprimir_informacao(**kwargs):
     ti = kwargs['ti']
-    base_ibge = ti.xcom_pull(task_ids='new_agendados_semana_atual')
-    print(len(base_ibge))
-    print(base_ibge.head(10))
+    new_agendados_semana_atual = ti.xcom_pull(task_ids='new_agendados_semana_atual')
+    new_agendados_semana_anterior = ti.xcom_pull(task_ids='new_agendados_semana_anterior')
+    lista_cidades = ti.xcom_pull(task_ids='lista_cidades')
+    print('new_agendados_semana_atual')
+    print(len(new_agendados_semana_atual))
+    print(new_agendados_semana_atual.head())
+    print('new_agendados_semana_anterior')
+    print(len(new_agendados_semana_anterior))
+    print(new_agendados_semana_anterior.head())
+    print('lista_cidades')
+    print(len(lista_cidades))
+    print(lista_cidades.head())
 
 # def envio_banco_dados(**kwargs):
 
@@ -110,4 +191,16 @@ new_agendados_semana_atual = PythonOperator(
     dag=dag
 ) 
 
-new_agendados_semana_atual >> imprimir_informacao
+new_agendados_semana_anterior = PythonOperator(
+    task_id='new_agendados_semana_anterior',
+    python_callable=new_agendados_semana_anterior,
+    dag=dag,
+) 
+
+lista_cidades = PythonOperator(
+    task_id='lista_cidades',
+    python_callable=lista_cidades,
+    dag=dag,
+) 
+
+[new_agendados_semana_atual, new_agendados_semana_anterior, lista_cidades] >> imprimir_informacao
