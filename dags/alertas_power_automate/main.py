@@ -443,29 +443,29 @@ dag = DAG(
 #     dag=dag
 # ) 
 
-new_agendados_semana_atual = PythonOperator(
-    task_id='new_agendados_semana_atual',
-    python_callable=new_agendados_semana_atual,
-    dag=dag
-) 
+# new_agendados_semana_atual = PythonOperator(
+#     task_id='new_agendados_semana_atual',
+#     python_callable=new_agendados_semana_atual,
+#     dag=dag
+# ) 
 
-new_agendados_semana_anterior = PythonOperator(
-    task_id='new_agendados_semana_anterior',
-    python_callable=new_agendados_semana_anterior,
-    dag=dag,
-) 
+# new_agendados_semana_anterior = PythonOperator(
+#     task_id='new_agendados_semana_anterior',
+#     python_callable=new_agendados_semana_anterior,
+#     dag=dag,
+# ) 
 
-lista_de_cidades = PythonOperator(
-    task_id='lista_de_cidades',
-    python_callable=lista_de_cidades,
-    dag=dag
-) 
+# lista_de_cidades = PythonOperator(
+#     task_id='lista_de_cidades',
+#     python_callable=lista_de_cidades,
+#     dag=dag
+# ) 
 
-iba_semana_anterior = PythonOperator(
-    task_id='iba_semana_anterior',
-    python_callable=iba_semana_anterior,
-    dag=dag
-) 
+# iba_semana_anterior = PythonOperator(
+#     task_id='iba_semana_anterior',
+#     python_callable=iba_semana_anterior,
+#     dag=dag
+# ) 
 
 iba_semana_atual = PythonOperator(
     task_id='iba_semana_atual',
@@ -473,11 +473,11 @@ iba_semana_atual = PythonOperator(
     dag=dag
 ) 
 
-cria_df_final = PythonOperator(
-    task_id='cria_df_final',
-    python_callable=cria_df_final,
-    dag=dag
-) 
+# cria_df_final = PythonOperator(
+#     task_id='cria_df_final',
+#     python_callable=cria_df_final,
+#     dag=dag
+# ) 
 
 cria_df_ibas = PythonOperator(
     task_id='cria_df_ibas',
@@ -485,20 +485,20 @@ cria_df_ibas = PythonOperator(
     dag=dag
 ) 
 
-juntar_tudo_df_final = PythonOperator(
-    task_id='juntar_tudo_df_final',
-    python_callable=juntar_tudo_df_final,
-    dag=dag
-) 
+# juntar_tudo_df_final = PythonOperator(
+#     task_id='juntar_tudo_df_final',
+#     python_callable=juntar_tudo_df_final,
+#     dag=dag
+# ) 
 
-cadunico = PythonOperator(
-    task_id='cadunico',
-    python_callable=cadunico,
-    dag=dag
-) 
+# cadunico = PythonOperator(
+#     task_id='cadunico',
+#     python_callable=cadunico,
+#     dag=dag
+# ) 
 
-[new_agendados_semana_atual, new_agendados_semana_anterior] >> cria_df_final
+# [new_agendados_semana_atual, new_agendados_semana_anterior] >> cria_df_final
 
 [iba_semana_anterior, iba_semana_atual] >> cria_df_ibas
 
-[cria_df_final, cria_df_ibas, lista_de_cidades, cadunico] >> juntar_tudo_df_final
+# [cria_df_final, cria_df_ibas, lista_de_cidades, cadunico] >> juntar_tudo_df_final
