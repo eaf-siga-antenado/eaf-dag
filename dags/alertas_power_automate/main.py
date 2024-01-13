@@ -461,11 +461,11 @@ dag = DAG(
 #     dag=dag
 # ) 
 
-# iba_semana_anterior = PythonOperator(
-#     task_id='iba_semana_anterior',
-#     python_callable=iba_semana_anterior,
-#     dag=dag
-# ) 
+iba_semana_anterior = PythonOperator(
+    task_id='iba_semana_anterior',
+    python_callable=iba_semana_anterior,
+    dag=dag
+) 
 
 iba_semana_atual = PythonOperator(
     task_id='iba_semana_atual',
