@@ -464,13 +464,15 @@ dag = DAG(
 iba_semana_anterior = PythonOperator(
     task_id='iba_semana_anterior',
     python_callable=iba_semana_anterior,
-    dag=dag
+    dag=dag,
+    timeout=timedelta(minutes=30)
 ) 
 
 iba_semana_atual = PythonOperator(
     task_id='iba_semana_atual',
     python_callable=iba_semana_atual,
-    dag=dag
+    dag=dag,
+    timeout=timedelta(minutes=30)
 ) 
 
 # cria_df_final = PythonOperator(
