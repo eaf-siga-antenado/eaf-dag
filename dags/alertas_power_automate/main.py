@@ -499,8 +499,8 @@ cadunico = PythonOperator(
     dag=dag
 ) 
 
-[new_agendados_semana_atual, new_agendados_semana_anterior] >> cria_df_final
-
 [iba_semana_anterior, iba_semana_atual] >> cria_df_ibas
+
+cria_df_ibas >> [new_agendados_semana_atual, new_agendados_semana_anterior] >> cria_df_final
 
 [cria_df_final, cria_df_ibas, lista_de_cidades, cadunico] >> juntar_tudo_df_final
