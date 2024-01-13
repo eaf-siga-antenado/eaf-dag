@@ -465,14 +465,14 @@ iba_semana_anterior = PythonOperator(
     task_id='iba_semana_anterior',
     python_callable=iba_semana_anterior,
     dag=dag,
-    execution_timeout=timedelta(minutes=30)
+    execution_timeout=timedelta(minutes=60)
 ) 
 
 iba_semana_atual = PythonOperator(
     task_id='iba_semana_atual',
     python_callable=iba_semana_atual,
     dag=dag,
-    execution_timeout=timedelta(minutes=30)
+    execution_timeout=timedelta(minutes=60)
 ) 
 
 # cria_df_final = PythonOperator(
