@@ -56,7 +56,7 @@ def cria_df_ibas(**kwargs):
     ibas = iba_semana_anterior.merge(iba_semana_atual, how='left', on='ibge')
     return ibas
 
-def iba_semana_atual():
+def ibas():
     import pandas as pd
     from airflow.models import Variable
     from sqlalchemy.orm import sessionmaker
@@ -74,13 +74,13 @@ def iba_semana_atual():
 
     consulta_sql = '''
     WITH backlog_futuro AS(
-    -- Agendados Backlog Futuro
-
+    -- semana anterior
     SELECT
         t.IBGE,
         ibge.regiao,
         ibge.Nome_Cidade,
-        COUNT(*) quantidade
+        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS quantidade_anterior,
+        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS quantidade_atual
     FROM [eaf_tvro].[ticket_view] t
     LEFT JOIN [eaf_tvro].[ibge]
     ON t.IBGE = ibge.cIBGE
@@ -89,7 +89,6 @@ def iba_semana_atual():
     AND Status IN ('2', '7', '8', '10', '11', '12', '13')
     AND StatusdaInstalação NOT IN ('Remarcada Fornecedor', 'Cancelada') AND LOWER(Assunto) NOT LIKE '%zendesk%'
     AND CAST(DataHoraAgendamento AS DATE) >= GETDATE() AND CAST(DataHoraAgendamento AS DATE) IS NOT NULL
-    AND CAST(Horadacriação AS DATE) <= GETDATE()
     GROUP BY
     t.IBGE,
     ibge.regiao,
@@ -101,7 +100,8 @@ def iba_semana_atual():
         t.IBGE,
         ibge.regiao,
         ibge.Nome_Cidade,
-        COUNT(*) quantidade
+        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS quantidade_anterior,
+        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS quantidade_atual
     FROM [eaf_tvro].[ticket_view] t
     LEFT JOIN [eaf_tvro].[ibge]
     ON t.IBGE = ibge.cIBGE
@@ -110,7 +110,6 @@ def iba_semana_atual():
     AND Status IN ('2', '7', '8', '10', '11', '12', '13')
     AND StatusdaInstalação NOT IN ('Remarcada Fornecedor', 'Cancelada') AND LOWER(Assunto) NOT LIKE '%zendesk%'
     AND CAST(DataHoraAgendamento AS DATE) < GETDATE() AND CAST(DataHoraAgendamento AS DATE) IS NOT NULL
-    AND CAST(Horadacriação AS DATE) <= GETDATE()
     GROUP BY
     t.IBGE,
     ibge.regiao,
@@ -122,14 +121,14 @@ def iba_semana_atual():
         t.IBGE,
         ibge.regiao,
         ibge.Nome_Cidade,
-        COUNT(*) quantidade
+        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS quantidade_anterior,
+        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS quantidade_atual
     FROM [eaf_tvro].[ticket_view] t
     LEFT JOIN [eaf_tvro].[ibge]
     ON t.IBGE = ibge.cIBGE
     WHERE StatusdaInstalação = 'Instalada' AND Tipo = 'Service Task' AND Status IN ('4', '5') AND 
     MotivodocontatoInstalação NOT IN ('Cobrança Indevida', 'Contestação', 'Reclamação por problema técnico', 'Manutenção', 'Manutenção - Problema Técnico', 'Manutenção - Técnico Não Compareceu')
     AND LOWER(Assunto) NOT LIKE '%zendesk%'
-    AND CAST(Horadacriação AS DATE) <= GETDATE()
     GROUP BY
     t.IBGE,
     ibge.regiao,
@@ -145,7 +144,8 @@ def iba_semana_atual():
 
     SELECT
         todas_cidades.ibge,
-        (COALESCE(bf.quantidade, 0) + COALESCE(b.quantidade, 0) + COALESCE(instalados.quantidade, 0)) AS iba_semana_atual
+        (COALESCE(bf.quantidade_anterior, 0) + COALESCE(b.quantidade_anterior, 0) + COALESCE(instalados.quantidade_anterior, 0)) AS iba_semana_anterior,
+        (COALESCE(bf.quantidade_atual, 0) + COALESCE(b.quantidade_atual, 0) + COALESCE(instalados.quantidade_atual, 0)) AS iba_semana_atual
     FROM todas_cidades 
     LEFT JOIN backlog_futuro bf
     ON todas_cidades.ibge = bf.IBGE
@@ -153,112 +153,13 @@ def iba_semana_atual():
     ON todas_cidades.ibge = b.IBGE
     LEFT JOIN instalados
     ON todas_cidades.ibge = instalados.IBGE
+
     '''
     resultado = session.execute(text(consulta_sql))
-    iba_semana_atual = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
-    return iba_semana_atual
-
-def iba_semana_anterior():
-    import pandas as pd
-    from airflow.models import Variable
-    from sqlalchemy.orm import sessionmaker
-    from sqlalchemy import create_engine, text
-
-    server = Variable.get('DBSERVER')
-    database = Variable.get('DATABASE')
-    username = Variable.get('DBUSER')
-    password = Variable.get('DBPASSWORD')
-
-    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
-
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    consulta_sql = '''
-    WITH backlog_futuro AS(
-    -- Agendados Backlog Futuro
-
-    SELECT
-        t.IBGE,
-        ibge.regiao,
-        ibge.Nome_Cidade,
-        COUNT(*) quantidade
-    FROM [eaf_tvro].[ticket_view] t
-    LEFT JOIN [eaf_tvro].[ibge]
-    ON t.IBGE = ibge.cIBGE
-    WHERE 
-    Tipo = 'Service Task' 
-    AND Status IN ('2', '7', '8', '10', '11', '12', '13')
-    AND StatusdaInstalação NOT IN ('Remarcada Fornecedor', 'Cancelada') AND LOWER(Assunto) NOT LIKE '%zendesk%'
-    AND CAST(DataHoraAgendamento AS DATE) >= GETDATE() AND CAST(DataHoraAgendamento AS DATE) IS NOT NULL
-    AND CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE)
-    GROUP BY
-    t.IBGE,
-    ibge.regiao,
-    ibge.Nome_Cidade
-    )
-
-    , backlog AS(
-    SELECT
-        t.IBGE,
-        ibge.regiao,
-        ibge.Nome_Cidade,
-        COUNT(*) quantidade
-    FROM [eaf_tvro].[ticket_view] t
-    LEFT JOIN [eaf_tvro].[ibge]
-    ON t.IBGE = ibge.cIBGE
-    WHERE 
-    Tipo = 'Service Task' 
-    AND Status IN ('2', '7', '8', '10', '11', '12', '13')
-    AND StatusdaInstalação NOT IN ('Remarcada Fornecedor', 'Cancelada') AND LOWER(Assunto) NOT LIKE '%zendesk%'
-    AND CAST(DataHoraAgendamento AS DATE) < GETDATE() AND CAST(DataHoraAgendamento AS DATE) IS NOT NULL
-    AND CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE)
-    GROUP BY
-    t.IBGE,
-    ibge.regiao,
-    ibge.Nome_Cidade
-    )
-
-    , instalados AS(
-    SELECT
-        t.IBGE,
-        ibge.regiao,
-        ibge.Nome_Cidade,
-        COUNT(*) quantidade
-    FROM [eaf_tvro].[ticket_view] t
-    LEFT JOIN [eaf_tvro].[ibge]
-    ON t.IBGE = ibge.cIBGE
-    WHERE StatusdaInstalação = 'Instalada' AND Tipo = 'Service Task' AND Status IN ('4', '5') AND 
-    MotivodocontatoInstalação NOT IN ('Cobrança Indevida', 'Contestação', 'Reclamação por problema técnico', 'Manutenção', 'Manutenção - Problema Técnico', 'Manutenção - Técnico Não Compareceu')
-    AND LOWER(Assunto) NOT LIKE '%zendesk%'
-    AND CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE)
-    GROUP BY
-    t.IBGE,
-    ibge.regiao,
-    ibge.Nome_Cidade
-
-    )
-
-    , todas_cidades AS(
-        SELECT
-            cIBGE ibge
-        FROM [eaf_tvro].[ibge]
-    )
-
-    SELECT
-        todas_cidades.ibge,
-        (COALESCE(bf.quantidade, 0) + COALESCE(b.quantidade, 0) + COALESCE(instalados.quantidade, 0)) AS iba_semana_anterior
-    FROM todas_cidades 
-    LEFT JOIN backlog_futuro bf
-    ON todas_cidades.ibge = bf.IBGE
-    LEFT JOIN backlog b
-    ON todas_cidades.ibge = b.IBGE
-    LEFT JOIN instalados
-    ON todas_cidades.ibge = instalados.IBGE
-    '''
-    resultado = session.execute(text(consulta_sql))
-    iba_semana_anterior = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
-    return iba_semana_anterior
+    ibas = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    print(len(ibas))
+    print(ibas.head(20))
+    return ibas
 
 def cadunico():
     import pandas as pd
@@ -443,64 +344,58 @@ dag = DAG(
 #     dag=dag
 # ) 
 
-new_agendados_semana_atual = PythonOperator(
-    task_id='new_agendados_semana_atual',
-    python_callable=new_agendados_semana_atual,
-    dag=dag
-) 
 
-new_agendados_semana_anterior = PythonOperator(
-    task_id='new_agendados_semana_anterior',
-    python_callable=new_agendados_semana_anterior,
-    dag=dag,
-) 
 
-lista_de_cidades = PythonOperator(
-    task_id='lista_de_cidades',
-    python_callable=lista_de_cidades,
-    dag=dag
-) 
 
-iba_semana_anterior = PythonOperator(
-    task_id='iba_semana_anterior',
-    python_callable=iba_semana_anterior,
+
+
+
+
+# new_agendados_semana_atual = PythonOperator(
+#     task_id='new_agendados_semana_atual',
+#     python_callable=new_agendados_semana_atual,
+#     dag=dag
+# ) 
+
+# new_agendados_semana_anterior = PythonOperator(
+#     task_id='new_agendados_semana_anterior',
+#     python_callable=new_agendados_semana_anterior,
+#     dag=dag,
+# ) 
+
+# lista_de_cidades = PythonOperator(
+#     task_id='lista_de_cidades',
+#     python_callable=lista_de_cidades,
+#     dag=dag
+# ) 
+
+# cria_df_final = PythonOperator(
+#     task_id='cria_df_final',
+#     python_callable=cria_df_final,
+#     dag=dag
+# ) 
+
+ibas = PythonOperator(
+    task_id='ibas',
+    python_callable=ibas,
     dag=dag,
     execution_timeout=timedelta(minutes=60)
 ) 
 
-iba_semana_atual = PythonOperator(
-    task_id='iba_semana_atual',
-    python_callable=iba_semana_atual,
-    dag=dag,
-    execution_timeout=timedelta(minutes=60)
-) 
+# juntar_tudo_df_final = PythonOperator(
+#     task_id='juntar_tudo_df_final',
+#     python_callable=juntar_tudo_df_final,
+#     dag=dag
+# ) 
 
-cria_df_final = PythonOperator(
-    task_id='cria_df_final',
-    python_callable=cria_df_final,
-    dag=dag
-) 
+# cadunico = PythonOperator(
+#     task_id='cadunico',
+#     python_callable=cadunico,
+#     dag=dag
+# )
 
-cria_df_ibas = PythonOperator(
-    task_id='cria_df_ibas',
-    python_callable=cria_df_ibas,
-    dag=dag
-) 
+ibas
 
-juntar_tudo_df_final = PythonOperator(
-    task_id='juntar_tudo_df_final',
-    python_callable=juntar_tudo_df_final,
-    dag=dag
-) 
+# cria_df_ibas >> [new_agendados_semana_atual, new_agendados_semana_anterior] >> cria_df_final
 
-cadunico = PythonOperator(
-    task_id='cadunico',
-    python_callable=cadunico,
-    dag=dag
-) 
-
-[iba_semana_anterior, iba_semana_atual] >> cria_df_ibas
-
-cria_df_ibas >> [new_agendados_semana_atual, new_agendados_semana_anterior] >> cria_df_final
-
-[cria_df_final, cria_df_ibas, lista_de_cidades, cadunico] >> juntar_tudo_df_final
+# [cria_df_final, cria_df_ibas, lista_de_cidades, cadunico] >> juntar_tudo_df_final
