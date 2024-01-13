@@ -56,7 +56,7 @@ def cria_df_ibas(**kwargs):
     ibas = iba_semana_anterior.merge(iba_semana_atual, how='left', on='ibge')
     return ibas
 
-def ibas():
+def backlog_futuro():
     import pandas as pd
     from airflow.models import Variable
     from sqlalchemy.orm import sessionmaker
@@ -73,8 +73,6 @@ def ibas():
     session = Session()
 
     consulta_sql = '''
-    WITH backlog_futuro AS(
-    -- semana anterior
     SELECT
         t.IBGE,
         ibge.regiao,
@@ -93,9 +91,30 @@ def ibas():
     t.IBGE,
     ibge.regiao,
     ibge.Nome_Cidade
-    )
+    '''
+    resultado = session.execute(text(consulta_sql))
+    backlog_futuro = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    print(len(backlog_futuro))
+    print(backlog_futuro.head(10))
+    return backlog_futuro
 
-    , backlog AS(
+def backlog():
+    import pandas as pd
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    consulta_sql = '''
     SELECT
         t.IBGE,
         ibge.regiao,
@@ -114,9 +133,30 @@ def ibas():
     t.IBGE,
     ibge.regiao,
     ibge.Nome_Cidade
-    )
+    '''
+    resultado = session.execute(text(consulta_sql))
+    backlog = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    print(len(backlog))
+    print(backlog.head(10))
+    return backlog
 
-    , instalados AS(
+def instalados():
+    import pandas as pd
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    consulta_sql = '''
     SELECT
         t.IBGE,
         ibge.regiao,
@@ -133,33 +173,12 @@ def ibas():
     t.IBGE,
     ibge.regiao,
     ibge.Nome_Cidade
-
-    )
-
-    , todas_cidades AS(
-        SELECT
-            cIBGE ibge
-        FROM [eaf_tvro].[ibge]
-    )
-
-    SELECT
-        todas_cidades.ibge,
-        (COALESCE(bf.quantidade_anterior, 0) + COALESCE(b.quantidade_anterior, 0) + COALESCE(instalados.quantidade_anterior, 0)) AS iba_semana_anterior,
-        (COALESCE(bf.quantidade_atual, 0) + COALESCE(b.quantidade_atual, 0) + COALESCE(instalados.quantidade_atual, 0)) AS iba_semana_atual
-    FROM todas_cidades 
-    LEFT JOIN backlog_futuro bf
-    ON todas_cidades.ibge = bf.IBGE
-    LEFT JOIN backlog b
-    ON todas_cidades.ibge = b.IBGE
-    LEFT JOIN instalados
-    ON todas_cidades.ibge = instalados.IBGE
-
     '''
     resultado = session.execute(text(consulta_sql))
-    ibas = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
-    print(len(ibas))
-    print(ibas.head(20))
-    return ibas
+    instalados = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    print(len(instalados))
+    print(instalados.head(10))
+    return instalados
 
 def cadunico():
     import pandas as pd
@@ -382,6 +401,24 @@ ibas = PythonOperator(
     execution_timeout=timedelta(minutes=60)
 ) 
 
+backlog_futuro = PythonOperator(
+    task_id='backlog_futuro',
+    python_callable=backlog_futuro,
+    dag=dag
+)
+
+backlog = PythonOperator(
+    task_id='backlog',
+    python_callable=backlog,
+    dag=dag
+)
+
+instalados = PythonOperator(
+    task_id='instalados',
+    python_callable=instalados,
+    dag=dag
+)
+
 # juntar_tudo_df_final = PythonOperator(
 #     task_id='juntar_tudo_df_final',
 #     python_callable=juntar_tudo_df_final,
@@ -394,7 +431,11 @@ ibas = PythonOperator(
 #     dag=dag
 # )
 
-ibas
+backlog_futuro
+
+backlog
+
+instalados
 
 # cria_df_ibas >> [new_agendados_semana_atual, new_agendados_semana_anterior] >> cria_df_final
 
