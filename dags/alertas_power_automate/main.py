@@ -9,24 +9,6 @@ from airflow.models import Variable
 from sqlalchemy import create_engine
 from airflow.operators.python_operator import PythonOperator
 
-def cria_coluna_curva(value):
-    if value > 9:
-        return 'Long Tail'
-    elif value > 2:
-        return 'Decrescente'
-    elif value > 0:
-        return 'Crescente'
-    return None
-
-def calcular_variacao_agendamentos(row):
-    if (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) > 20:
-        if row['new_agendados_semana_anterior'] == 0:
-            return 1
-        else:
-            return (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) / row['new_agendados_semana_anterior']
-    else:
-        return 0
-
 def backlog_futuro():
     import pandas as pd
     from airflow.models import Variable
@@ -336,6 +318,143 @@ def new_agendados_semana_atual():
     new_agendados_semana_atual = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
     return new_agendados_semana_atual
 
+# cálculo variação de agendamentos
+def calcular_variacao_agendamentos(row):
+    if (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) > 20:
+        if row['new_agendados_semana_anterior'] == 0:
+            return 1
+        else:
+            return (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) / row['new_agendados_semana_anterior']
+    else:
+        return 0
+
+def cria_coluna_curva(value):
+    if value > 9:
+        return 'Long Tail'
+    elif value > 2:
+        return 'Decrescente'
+    elif value > 0:
+        return 'Crescente'
+    return None
+
+# porcentagem_iba_cadunico_semana_anterior 
+def porcentagem_iba_cadunico_semana_anterior(row):
+    return row['iba_semana_anterior'] / row['qtd_cadunico'] if row['qtd_cadunico'] else 0
+
+# porcentagem_iba_cadunico_semana_atual 
+def porcentagem_iba_cadunico_semana_atual(row):
+    return row['iba_semana_atual'] / row['qtd_cadunico'] if row['qtd_cadunico'] else 0
+
+# porcentagem iba domicilios semana anterior
+def porcentagem_iba_domicilios_semana_anterior(row):
+    return (row['iba_semana_anterior'] / row['qtd_domicilios']) if row['qtd_domicilios'] else 0
+
+# porcentagem iba domicilios semana atual
+def porcentagem_iba_domicilios_semana_atual(row):
+    return (row['iba_semana_atual'] / row['qtd_domicilios']) if row['qtd_domicilios'] else 0
+
+# % de risco semana anterior
+def porcentagem_de_risco_semana_anterior(row):
+    domicilios = row['porcentagem_iba_domicilios_semana_anterior'] * 0.5
+    codfamilia = row['porcentagem_iba_cadunico_semana_anterior'] * 0.5
+    resultado = (domicilios + codfamilia) / 1
+    return resultado if resultado else 0
+
+# % de risco semana atual
+def porcentagem_de_risco_semana_atual(row):
+    domicilios = row['porcentagem_iba_domicilios_semana_atual'] * 0.5
+    codfamilia = row['porcentagem_iba_cadunico_semana_atual'] * 0.5
+    resultado = (domicilios + codfamilia) / 1
+    return resultado if resultado else 0
+
+# alerta de prevenção crescente
+def alerta_prevencao_crescente(row):
+    if not row['variacao_agendamentos_semana']:
+        return None
+    elif row['variacao_agendamentos_semana'] > 0.4 and row['porcentagem_de_risco_semana_anterior'] < 0.5 and row['porcentagem_de_risco_semana_atual'] < 0.5:
+        return 'Comunicado - Verde'
+    elif row['variacao_agendamentos_semana'] > 0.4 and row['porcentagem_de_risco_semana_anterior'] < 0.5 and row['porcentagem_de_risco_semana_atual'] < 0.8:
+        return 'Alerta - Amarelo'
+    elif row['variacao_agendamentos_semana'] > 0.4 and row['porcentagem_de_risco_semana_anterior'] < 0.8 and row['porcentagem_de_risco_semana_atual'] < 0.8:
+        return 'Comunicado - Amarelo'
+    elif row['variacao_agendamentos_semana'] > 0.4 and row['porcentagem_de_risco_semana_anterior'] < 0.8 and row['porcentagem_de_risco_semana_atual'] > 0.8:
+        return 'Alerta - Vermelho'
+    elif row['variacao_agendamentos_semana'] > 0.4 and row['porcentagem_de_risco_semana_anterior'] > 0.8 and row['porcentagem_de_risco_semana_atual'] > 0.8:
+        return 'Alerta - Vermelho Crítico'
+    
+# alerta de prevenção decrescente
+def alerta_prevencao_decrescente(row):
+    if not row['variacao_agendamentos_semana']:
+        return None
+    elif row['variacao_agendamentos_semana'] > 0.2 and row['porcentagem_de_risco_semana_anterior'] < 0.5 and row['porcentagem_de_risco_semana_atual'] < 0.5:
+        return 'Comunicado - Verde'
+    elif row['variacao_agendamentos_semana'] > 0.2 and row['porcentagem_de_risco_semana_anterior'] < 0.5 and row['porcentagem_de_risco_semana_atual'] < 0.8:
+        return 'Alerta - Amarelo'
+    elif row['variacao_agendamentos_semana'] > 0.2 and row['porcentagem_de_risco_semana_anterior'] < 0.8 and row['porcentagem_de_risco_semana_atual'] < 0.8:
+        return 'Comunicado - Amarelo'
+    elif row['variacao_agendamentos_semana'] > 0.2 and row['porcentagem_de_risco_semana_anterior'] < 0.8 and row['porcentagem_de_risco_semana_atual'] > 0.8:
+        return 'Alerta - Vermelho'
+    elif row['variacao_agendamentos_semana'] > 0.2 and row['porcentagem_de_risco_semana_anterior'] > 0.8 and row['porcentagem_de_risco_semana_atual'] > 0.8:
+        return 'Alerta - Vermelho Crítico' 
+
+# alerta de prevenção longtail
+def alerta_prevencao_longtail(row):
+    if not row['variacao_agendamentos_semana']:
+        return None
+    elif row['variacao_agendamentos_semana'] > 0.3 and row['porcentagem_de_risco_semana_anterior'] < 0.5 and row['porcentagem_de_risco_semana_atual'] < 0.5:
+        return 'Comunicado - Verde'
+    elif row['variacao_agendamentos_semana'] > 0.3 and row['porcentagem_de_risco_semana_anterior'] < 0.5 and row['porcentagem_de_risco_semana_atual'] < 0.8:
+        return 'Alerta - Amarelo'
+    elif row['variacao_agendamentos_semana'] > 0.3 and row['porcentagem_de_risco_semana_anterior'] < 0.8 and row['porcentagem_de_risco_semana_atual'] < 0.8:
+        return 'Comunicado - Amarelo'
+    elif row['variacao_agendamentos_semana'] > 0.3 and row['porcentagem_de_risco_semana_anterior'] < 0.8 and row['porcentagem_de_risco_semana_atual'] > 0.8:
+        return 'Alerta - Vermelho'
+    elif row['variacao_agendamentos_semana'] > 0.3 and row['porcentagem_de_risco_semana_anterior'] > 0.8 and row['porcentagem_de_risco_semana_atual'] > 0.8:
+        return 'Alerta - Vermelho Crítico'
+    
+# alerta cálculo prevenção
+def calculo_prevencao_funcao(row):
+    if row['curva'] == 'Crescente':
+        return row['alerta_prevencao_crescente']
+    elif row['curva'] == 'Long Tail':
+        return row['alerta_prevencao_longtail']
+    elif row['curva'] == 'Descrescente':
+        return row['alerta_prevencao_decrescente']
+    return None
+
+# criação de nível de acordo com a informação calculo_prevencao
+def nivel_prevencao_funcao(row):
+    if row['calculo_prevencao'] == 'Comunicado - Verde':
+        return 1
+    elif row['calculo_prevencao'] == 'Alerta - Amarelo':
+        return 2
+    elif row['calculo_prevencao'] == 'Comunicado - Amarelo':
+        return 3
+    elif row['calculo_prevencao'] == 'Alerta - Vermelho':
+        return 4
+    elif row['calculo_prevencao'] == 'Alerta - Vermelho Crítico':
+        return 5
+    return 0
+
+# criando colunas calculadas
+def cria_colunas_calculadas(**kwargs):
+    ti = kwargs['ti']
+    df_final = ti.xcom_pull(task_ids='criar_df_final')
+    df_final['variacao_agendamentos_semana'] = df_final.apply(calcular_variacao_agendamentos, axis=1)
+    df_final['porcentagem_iba_cadunico_semana_anterior'] = df_final.apply(porcentagem_iba_cadunico_semana_anterior, axis=1)
+    df_final['porcentagem_iba_cadunico_semana_atual'] = df_final.apply(porcentagem_iba_cadunico_semana_atual, axis=1)
+    df_final['porcentagem_iba_domicilios_semana_anterior'] = df_final.apply(porcentagem_iba_domicilios_semana_anterior, axis=1)
+    df_final['porcentagem_iba_domicilios_semana_atual'] = df_final.apply(porcentagem_iba_domicilios_semana_atual, axis=1)
+    df_final['porcentagem_de_risco_semana_anterior'] = df_final.apply(porcentagem_de_risco_semana_anterior, axis=1)
+    df_final['porcentagem_de_risco_semana_atual'] = df_final.apply(porcentagem_de_risco_semana_atual, axis=1)
+    df_final['alerta_prevencao_crescente'] = df_final.apply(alerta_prevencao_crescente, axis=1)
+    df_final['alerta_prevencao_decrescente'] = df_final.apply(alerta_prevencao_decrescente, axis=1)
+    df_final['alerta_prevencao_longtail'] = df_final.apply(alerta_prevencao_longtail, axis=1)
+    df_final['calculo_prevencao'] = df_final.apply(calculo_prevencao_funcao, axis=1)
+    df_final['nivel_calculo_prevencao'] = df_final.apply(nivel_prevencao_funcao, axis=1)
+    df_final = df_final[df_final['nivel_calculo_prevencao'] >= 2]
+    print(df_final.head())
+
 # def envio_banco_dados(**kwargs):
 
 #     ti = kwargs['ti']
@@ -366,12 +485,6 @@ dag = DAG(
 #     python_callable=envio_banco_dados,
 #     dag=dag
 # )
-
-# extrair_dados_api = PythonOperator(
-#     task_id='extrair_dados_api',
-#     python_callable=extrair_dados_api,
-#     dag=dag
-# ) 
 
 new_agendados_semana_atual = PythonOperator(
     task_id='new_agendados_semana_atual',
@@ -433,6 +546,12 @@ cadunico = PythonOperator(
     dag=dag
 )
 
+cria_colunas_calculadas = PythonOperator(
+    task_id='cria_colunas_calculadas',
+    python_callable=cria_colunas_calculadas,
+    dag=dag
+)
+
 [backlog_futuro, backlog, instalados, todos_ibges] >> cria_df_ibas
 
-cria_df_ibas >> [lista_de_cidades, cadunico, new_agendados_semana_atual, new_agendados_semana_anterior] >> criar_df_final
+cria_df_ibas >> [lista_de_cidades, cadunico, new_agendados_semana_atual, new_agendados_semana_anterior] >> criar_df_final >> cria_colunas_calculadas
