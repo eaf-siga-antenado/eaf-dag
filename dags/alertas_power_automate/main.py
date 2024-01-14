@@ -150,8 +150,8 @@ def todos_ibges():
     print(todos_ibges.head(10))
     return todos_ibges
 
-# junta as informações de ibas e cria o df_final
-def cria_df_final(**kwargs):
+# junta as informações de ibas e cria o cria_df_ibas
+def cria_df_ibas(**kwargs):
     ti = kwargs['ti']
     todos_ibges = ti.xcom_pull(task_ids='todos_ibges')
     instalados = ti.xcom_pull(task_ids='instalados')
@@ -165,8 +165,6 @@ def cria_df_final(**kwargs):
     df_final['iba_semana_anterior'] = df_final['instalados_semana_anterior'] + df_final['backlog_semana_anterior'] + df_final['backlog_futuro_semana_anterior']
     df_final['iba_semana_atual'] = df_final['instalados_semana_atual'] + df_final['backlog_semana_atual'] + df_final['backlog_futuro_semana_atual']
     df_final.drop(columns=['instalados_semana_anterior', 'backlog_semana_anterior', 'backlog_futuro_semana_anterior', 'instalados_semana_atual', 'backlog_semana_atual', 'backlog_futuro_semana_atual'], inplace=True)
-    print(df_final.columns)
-    print(df_final.head(10))
     return df_final
 
 def calcular_variacao_agendamentos(row):
@@ -184,7 +182,7 @@ def juntar_tudo_df_final(**kwargs):
     ibas = ti.xcom_pull(task_ids='cria_df_ibas')
     cadunico = ti.xcom_pull(task_ids='cadunico')
     lista_cidades = ti.xcom_pull(task_ids='lista_cidades')
-    df_final = ti.xcom_pull(task_ids='cria_df_final')
+    df_final = ti.xcom_pull(task_ids='cria_df_ibas')
     df_final = df_final.merge(ibas, how='left', on='ibge')
     df_final = df_final.merge(cadunico, how='left', on='ibge')
     df_final = df_final.merge(lista_cidades, how='left', on='ibge')
@@ -195,14 +193,6 @@ def juntar_tudo_df_final(**kwargs):
     print(df_final.head(20))
 
     return df_final
-
-# junta as informações de iba_semana_anterior e iba_semana_atual
-def cria_df_ibas(**kwargs):
-    ti = kwargs['ti']
-    iba_semana_anterior = ti.xcom_pull(task_ids='iba_semana_anterior')
-    iba_semana_atual = ti.xcom_pull(task_ids='iba_semana_atual')
-    ibas = iba_semana_anterior.merge(iba_semana_atual, how='left', on='ibge')
-    return ibas
 
 def cadunico():
     import pandas as pd
@@ -394,27 +384,27 @@ dag = DAG(
 
 
 
-# new_agendados_semana_atual = PythonOperator(
-#     task_id='new_agendados_semana_atual',
-#     python_callable=new_agendados_semana_atual,
-#     dag=dag
-# ) 
+new_agendados_semana_atual = PythonOperator(
+    task_id='new_agendados_semana_atual',
+    python_callable=new_agendados_semana_atual,
+    dag=dag
+) 
 
-# new_agendados_semana_anterior = PythonOperator(
-#     task_id='new_agendados_semana_anterior',
-#     python_callable=new_agendados_semana_anterior,
-#     dag=dag,
-# ) 
+new_agendados_semana_anterior = PythonOperator(
+    task_id='new_agendados_semana_anterior',
+    python_callable=new_agendados_semana_anterior,
+    dag=dag,
+) 
 
-# lista_de_cidades = PythonOperator(
-#     task_id='lista_de_cidades',
-#     python_callable=lista_de_cidades,
-#     dag=dag
-# ) 
+lista_de_cidades = PythonOperator(
+    task_id='lista_de_cidades',
+    python_callable=lista_de_cidades,
+    dag=dag
+) 
 
-cria_df_final = PythonOperator(
-    task_id='cria_df_final',
-    python_callable=cria_df_final,
+cria_df_ibas = PythonOperator(
+    task_id='cria_df_ibas',
+    python_callable=cria_df_ibas,
     dag=dag
 ) 
 
@@ -448,10 +438,12 @@ todos_ibges = PythonOperator(
 #     dag=dag
 # ) 
 
-# cadunico = PythonOperator(
-#     task_id='cadunico',
-#     python_callable=cadunico,
-#     dag=dag
-# )
+cadunico = PythonOperator(
+    task_id='cadunico',
+    python_callable=cadunico,
+    dag=dag
+)
 
-[backlog_futuro, backlog, instalados, todos_ibges] >> cria_df_final
+[backlog_futuro, backlog, instalados, todos_ibges] >> cria_df_ibas
+
+cria_df_ibas >> [lista_de_cidades, cadunico, new_agendados_semana_atual, new_agendados_semana_anterior]
