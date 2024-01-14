@@ -56,6 +56,33 @@ def cria_df_ibas(**kwargs):
     ibas = iba_semana_anterior.merge(iba_semana_atual, how='left', on='ibge')
     return ibas
 
+def todos_ibges():
+    import pandas as pd
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    consulta_sql = '''
+    SELECT
+        cIBGE ibge
+    FROM [eaf_tvro].[ibge]
+    '''
+    resultado = session.execute(text(consulta_sql))
+    todos_ibges = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    print(len(todos_ibges))
+    print(todos_ibges.head(10))
+    return todos_ibges
+
 def backlog_futuro():
     import pandas as pd
     from airflow.models import Variable
@@ -412,6 +439,12 @@ instalados = PythonOperator(
     dag=dag
 )
 
+todos_ibges = PythonOperator(
+    task_id='todos_ibges',
+    python_callable=todos_ibges,
+    dag=dag
+)
+
 # juntar_tudo_df_final = PythonOperator(
 #     task_id='juntar_tudo_df_final',
 #     python_callable=juntar_tudo_df_final,
@@ -429,6 +462,8 @@ backlog_futuro
 backlog
 
 instalados
+
+todos_ibges
 
 # cria_df_ibas >> [new_agendados_semana_atual, new_agendados_semana_anterior] >> cria_df_final
 
