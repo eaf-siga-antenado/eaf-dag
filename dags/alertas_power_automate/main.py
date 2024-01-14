@@ -162,9 +162,11 @@ def cria_df_final(**kwargs):
                           .merge(backlog, on='ibge', how='left') \
                           .merge(backlog_futuro, on='ibge', how='left')
     df_final.fillna(0, inplace=True)
-    print('colunas:')
+    df_final['iba_semana_anterior'] = df_final['instalados_semana_anterior'] + df_final['backlog_semana_anterior'] + df_final['backlog_futuro_semana_anterior']
+    df_final['iba_semana_atual'] = df_final['instalados_semana_atual'] + df_final['backlog_semana_atual'] + df_final['backlog_futuro_semana_atual']
+    df_final.drop(columns=['instalados_semana_anterior', 'backlog_semana_anterior', 'backlog_futuro_semana_anterior', 'instalados_semana_atual', 'backlog_semana_atual', 'backlog_futuro_semana_atual'], inplace=True)
     print(df_final.columns)
-    print(df_final.head(20))
+    print(df_final.head(10))
     return df_final
 
 def calcular_variacao_agendamentos(row):
