@@ -9,6 +9,24 @@ from airflow.models import Variable
 from sqlalchemy import create_engine
 from airflow.operators.python_operator import PythonOperator
 
+def cria_coluna_curva(value):
+    if value > 9:
+        return 'Long Tail'
+    elif value > 2:
+        return 'Decrescente'
+    elif value > 0:
+        return 'Crescente'
+    return None
+
+def calcular_variacao_agendamentos(row):
+    if (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) > 20:
+        if row['new_agendados_semana_anterior'] == 0:
+            return 1
+        else:
+            return (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) / row['new_agendados_semana_anterior']
+    else:
+        return 0
+
 def backlog_futuro():
     import pandas as pd
     from airflow.models import Variable
@@ -158,40 +176,32 @@ def cria_df_ibas(**kwargs):
     backlog = ti.xcom_pull(task_ids='backlog')
     backlog_futuro = ti.xcom_pull(task_ids='backlog_futuro')
 
-    df_final = todos_ibges.merge(instalados, on='ibge', how='left') \
+    df_ibas = todos_ibges.merge(instalados, on='ibge', how='left') \
                           .merge(backlog, on='ibge', how='left') \
                           .merge(backlog_futuro, on='ibge', how='left')
-    df_final.fillna(0, inplace=True)
-    df_final['iba_semana_anterior'] = df_final['instalados_semana_anterior'] + df_final['backlog_semana_anterior'] + df_final['backlog_futuro_semana_anterior']
-    df_final['iba_semana_atual'] = df_final['instalados_semana_atual'] + df_final['backlog_semana_atual'] + df_final['backlog_futuro_semana_atual']
-    df_final.drop(columns=['instalados_semana_anterior', 'backlog_semana_anterior', 'backlog_futuro_semana_anterior', 'instalados_semana_atual', 'backlog_semana_atual', 'backlog_futuro_semana_atual'], inplace=True)
-    return df_final
+    df_ibas.fillna(0, inplace=True)
+    df_ibas['iba_semana_anterior'] = df_ibas['instalados_semana_anterior'] + df_ibas['backlog_semana_anterior'] + df_ibas['backlog_futuro_semana_anterior']
+    df_ibas['iba_semana_atual'] = df_ibas['instalados_semana_atual'] + df_ibas['backlog_semana_atual'] + df_ibas['backlog_futuro_semana_atual']
+    df_ibas.drop(columns=['instalados_semana_anterior', 'backlog_semana_anterior', 'backlog_futuro_semana_anterior', 'instalados_semana_atual', 'backlog_semana_atual', 'backlog_futuro_semana_atual'], inplace=True)
+    return df_ibas
 
-def calcular_variacao_agendamentos(row):
-    if (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) > 20:
-        if row['new_agendados_semana_anterior'] == 0:
-            return 1
-        else:
-            return (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) / row['new_agendados_semana_anterior']
-    else:
-        return 0
-    
 # função que faz os left join, juntando tudo no df_final
-def juntar_tudo_df_final(**kwargs):
+def criar_df_final(**kwargs):
     ti = kwargs['ti']
     ibas = ti.xcom_pull(task_ids='cria_df_ibas')
     cadunico = ti.xcom_pull(task_ids='cadunico')
     lista_cidades = ti.xcom_pull(task_ids='lista_cidades')
-    df_final = ti.xcom_pull(task_ids='cria_df_ibas')
-    df_final = df_final.merge(ibas, how='left', on='ibge')
-    df_final = df_final.merge(cadunico, how='left', on='ibge')
-    df_final = df_final.merge(lista_cidades, how='left', on='ibge')
+    new_agendados_semana_anterior = ti.xcom_pull(task_ids='new_agendados_semana_anterior')
+    new_agendados_semana_atual = ti.xcom_pull(task_ids='new_agendados_semana_atual')
+    df_final = ibas.merge(cadunico, how='left', on='ibge')\
+                   .merge(lista_cidades, how='left', on='ibge')\
+                   .merge(new_agendados_semana_anterior, how='left', on='ibge')\
+                   .merge(new_agendados_semana_atual, how='left', on='ibge')
 
     print(f'tamanho do df {len(df_final)}')
     print(f'todas as colunas {df_final.columns}')
     print('algumas informações')
     print(df_final.head(20))
-
     return df_final
 
 def cadunico():
@@ -220,15 +230,6 @@ def cadunico():
     cadunico = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
     return cadunico
 
-def cria_coluna_curva(value):
-    if value > 9:
-        return 'Long Tail'
-    elif value > 2:
-        return 'Decrescente'
-    elif value > 0:
-        return 'Crescente'
-    return None
-
 def lista_de_cidades():
     import pandas as pd
     from airflow.models import Variable
@@ -248,7 +249,6 @@ def lista_de_cidades():
     consulta_sql = '''
     SELECT 
         [cód. IBGE] ibge,
-        Município municipio,
         FASE fase,
         [INÍCIO DE CAMPANHA] inicio_campanha,
         DATEDIFF(MONTH, [INÍCIO DE CAMPANHA], GETDATE()) diferenca_em_meses
@@ -320,8 +320,6 @@ def new_agendados_semana_atual():
     consulta_sql = '''
     SELECT
         t.IBGE ibge,
-        ibge.regiao,
-        ibge.Nome_Cidade,
         ibge.domicilios_particulares qtd_domicilios,
         COUNT(t.IDdoticket) new_agendados_semana_atual
     FROM [eaf_tvro].[ticket_view] t
@@ -332,8 +330,6 @@ def new_agendados_semana_atual():
     AND Status IN ('2', '7', '8', '10', '11', '12', '13') AND DataHoraAgendamento IS NOT NULL AND StatusdaInstalação <> 'Remarcada Fornecedor' AND t.IBGE IS NOT NULL
     GROUP BY
     t.IBGE,
-    ibge.regiao,
-    ibge.Nome_Cidade,
     ibge.domicilios_particulares
     '''
     resultado = session.execute(text(consulta_sql))
@@ -376,13 +372,6 @@ dag = DAG(
 #     python_callable=extrair_dados_api,
 #     dag=dag
 # ) 
-
-
-
-
-
-
-
 
 new_agendados_semana_atual = PythonOperator(
     task_id='new_agendados_semana_atual',
@@ -432,11 +421,11 @@ todos_ibges = PythonOperator(
     dag=dag
 )
 
-# juntar_tudo_df_final = PythonOperator(
-#     task_id='juntar_tudo_df_final',
-#     python_callable=juntar_tudo_df_final,
-#     dag=dag
-# ) 
+criar_df_final = PythonOperator(
+    task_id='criar_df_final',
+    python_callable=criar_df_final,
+    dag=dag
+) 
 
 cadunico = PythonOperator(
     task_id='cadunico',
@@ -446,4 +435,4 @@ cadunico = PythonOperator(
 
 [backlog_futuro, backlog, instalados, todos_ibges] >> cria_df_ibas
 
-cria_df_ibas >> [lista_de_cidades, cadunico, new_agendados_semana_atual, new_agendados_semana_anterior]
+cria_df_ibas >> [lista_de_cidades, cadunico, new_agendados_semana_atual, new_agendados_semana_anterior] >> criar_df_final
