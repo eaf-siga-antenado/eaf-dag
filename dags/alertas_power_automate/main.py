@@ -394,13 +394,6 @@ dag = DAG(
 #     dag=dag
 # ) 
 
-ibas = PythonOperator(
-    task_id='ibas',
-    python_callable=ibas,
-    dag=dag,
-    execution_timeout=timedelta(minutes=60)
-) 
-
 backlog_futuro = PythonOperator(
     task_id='backlog_futuro',
     python_callable=backlog_futuro,
