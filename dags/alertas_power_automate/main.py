@@ -9,80 +9,6 @@ from airflow.models import Variable
 from sqlalchemy import create_engine
 from airflow.operators.python_operator import PythonOperator
 
-def calcular_variacao_agendamentos(row):
-    if (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) > 20:
-        if row['new_agendados_semana_anterior'] == 0:
-            return 1
-        else:
-            return (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) / row['new_agendados_semana_anterior']
-    else:
-        return 0
-    
-# função que faz os left join, juntando tudo no df_final
-def juntar_tudo_df_final(**kwargs):
-    ti = kwargs['ti']
-    ibas = ti.xcom_pull(task_ids='cria_df_ibas')
-    cadunico = ti.xcom_pull(task_ids='cadunico')
-    lista_cidades = ti.xcom_pull(task_ids='lista_cidades')
-    df_final = ti.xcom_pull(task_ids='cria_df_final')
-    df_final = df_final.merge(ibas, how='left', on='ibge')
-    df_final = df_final.merge(cadunico, how='left', on='ibge')
-    df_final = df_final.merge(lista_cidades, how='left', on='ibge')
-
-    print(f'tamanho do df {len(df_final)}')
-    print(f'todas as colunas {df_final.columns}')
-    print('algumas informações')
-    print(df_final.head(20))
-
-    return df_final
-
-# junta as informações de new_agendados_semana_anterior e new_agendados_semana_atual
-def cria_df_final(**kwargs):
-    ti = kwargs['ti']
-    new_agendados_semana_atual = ti.xcom_pull(task_ids='new_agendados_semana_atual')
-    new_agendados_semana_anterior = ti.xcom_pull(task_ids='new_agendados_semana_anterior')
-    df_final = new_agendados_semana_atual.merge(new_agendados_semana_anterior, on='ibge', how='left')
-    df_final = df_final[['ibge', 'regiao', 'Nome_Cidade', 'qtd_domicilios', 'new_agendados_semana_anterior', 'new_agendados_semana_atual']]
-    df_final.fillna(0, inplace=True)
-    df_final['new_agendados_semana_anterior'] = df_final['new_agendados_semana_anterior'].astype(int)
-    df_final['variacao_agendamentos_semana'] = df_final.apply(calcular_variacao_agendamentos, axis=1)
-    return df_final
-
-# junta as informações de iba_semana_anterior e iba_semana_atual
-def cria_df_ibas(**kwargs):
-    ti = kwargs['ti']
-    iba_semana_anterior = ti.xcom_pull(task_ids='iba_semana_anterior')
-    iba_semana_atual = ti.xcom_pull(task_ids='iba_semana_atual')
-    ibas = iba_semana_anterior.merge(iba_semana_atual, how='left', on='ibge')
-    return ibas
-
-def todos_ibges():
-    import pandas as pd
-    from airflow.models import Variable
-    from sqlalchemy.orm import sessionmaker
-    from sqlalchemy import create_engine, text
-
-    server = Variable.get('DBSERVER')
-    database = Variable.get('DATABASE')
-    username = Variable.get('DBUSER')
-    password = Variable.get('DBPASSWORD')
-
-    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
-
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    consulta_sql = '''
-    SELECT
-        cIBGE ibge
-    FROM [eaf_tvro].[ibge]
-    '''
-    resultado = session.execute(text(consulta_sql))
-    todos_ibges = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
-    print(len(todos_ibges))
-    print(todos_ibges.head(10))
-    return todos_ibges
-
 def backlog_futuro():
     import pandas as pd
     from airflow.models import Variable
@@ -206,6 +132,85 @@ def instalados():
     print(len(instalados))
     print(instalados.head(10))
     return instalados
+
+def todos_ibges():
+    import pandas as pd
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    consulta_sql = '''
+    SELECT
+        cIBGE ibge
+    FROM [eaf_tvro].[ibge]
+    '''
+    resultado = session.execute(text(consulta_sql))
+    todos_ibges = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    print(len(todos_ibges))
+    print(todos_ibges.head(10))
+    return todos_ibges
+
+# junta as informações de ibas e cria o df_final
+def cria_df_final(**kwargs):
+    ti = kwargs['ti']
+    todos_ibges = ti.xcom_pull(task_ids='todos_ibges')
+    instalados = ti.xcom_pull(task_ids='instalados')
+    backlog = ti.xcom_pull(task_ids='backlog')
+    backlog_futuro = ti.xcom_pull(task_ids='backlog_futuro')
+
+    df_final = todos_ibges.merge(instalados, on='ibge', how='left') \
+                          .merge(backlog, on='ibge', how='left') \
+                          .merge(backlog_futuro, on='ibge', how='left')
+    df_final.fillna(0, inplace=True)
+    print('colunas:')
+    print(df_final.columns)
+    print(df_final.head(20))
+    return df_final
+
+def calcular_variacao_agendamentos(row):
+    if (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) > 20:
+        if row['new_agendados_semana_anterior'] == 0:
+            return 1
+        else:
+            return (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) / row['new_agendados_semana_anterior']
+    else:
+        return 0
+    
+# função que faz os left join, juntando tudo no df_final
+def juntar_tudo_df_final(**kwargs):
+    ti = kwargs['ti']
+    ibas = ti.xcom_pull(task_ids='cria_df_ibas')
+    cadunico = ti.xcom_pull(task_ids='cadunico')
+    lista_cidades = ti.xcom_pull(task_ids='lista_cidades')
+    df_final = ti.xcom_pull(task_ids='cria_df_final')
+    df_final = df_final.merge(ibas, how='left', on='ibge')
+    df_final = df_final.merge(cadunico, how='left', on='ibge')
+    df_final = df_final.merge(lista_cidades, how='left', on='ibge')
+
+    print(f'tamanho do df {len(df_final)}')
+    print(f'todas as colunas {df_final.columns}')
+    print('algumas informações')
+    print(df_final.head(20))
+
+    return df_final
+
+# junta as informações de iba_semana_anterior e iba_semana_atual
+def cria_df_ibas(**kwargs):
+    ti = kwargs['ti']
+    iba_semana_anterior = ti.xcom_pull(task_ids='iba_semana_anterior')
+    iba_semana_atual = ti.xcom_pull(task_ids='iba_semana_atual')
+    ibas = iba_semana_anterior.merge(iba_semana_atual, how='left', on='ibge')
+    return ibas
 
 def cadunico():
     import pandas as pd
@@ -415,11 +420,11 @@ dag = DAG(
 #     dag=dag
 # ) 
 
-# cria_df_final = PythonOperator(
-#     task_id='cria_df_final',
-#     python_callable=cria_df_final,
-#     dag=dag
-# ) 
+cria_df_final = PythonOperator(
+    task_id='cria_df_final',
+    python_callable=cria_df_final,
+    dag=dag
+) 
 
 backlog_futuro = PythonOperator(
     task_id='backlog_futuro',
@@ -457,14 +462,4 @@ todos_ibges = PythonOperator(
 #     dag=dag
 # )
 
-backlog_futuro
-
-backlog
-
-instalados
-
-todos_ibges
-
-# cria_df_ibas >> [new_agendados_semana_atual, new_agendados_semana_anterior] >> cria_df_final
-
-# [cria_df_final, cria_df_ibas, lista_de_cidades, cadunico] >> juntar_tudo_df_final
+[backlog_futuro, backlog, instalados, todos_ibges] >> cria_df_final
