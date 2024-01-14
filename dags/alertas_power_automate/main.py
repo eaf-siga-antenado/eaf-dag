@@ -28,10 +28,8 @@ def backlog_futuro():
     consulta_sql = '''
     SELECT
         t.IBGE ibge,
-        ibge.regiao,
-        ibge.Nome_Cidade nome_cidade,
-        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS quantidade_anterior,
-        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS quantidade_atual
+        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS backlog_futuro_semana_anterior,
+        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS backlog_futuro_semana_atual
     FROM [eaf_tvro].[ticket_view] t
     LEFT JOIN [eaf_tvro].[ibge]
     ON t.IBGE = ibge.cIBGE
@@ -41,9 +39,7 @@ def backlog_futuro():
     AND StatusdaInstalação NOT IN ('Remarcada Fornecedor', 'Cancelada') AND LOWER(Assunto) NOT LIKE '%zendesk%'
     AND CAST(DataHoraAgendamento AS DATE) >= GETDATE() AND CAST(DataHoraAgendamento AS DATE) IS NOT NULL
     GROUP BY
-    t.IBGE,
-    ibge.regiao,
-    ibge.Nome_Cidade
+    t.IBGE
     '''
     resultado = session.execute(text(consulta_sql))
     backlog_futuro = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
@@ -70,10 +66,8 @@ def backlog():
     consulta_sql = '''
     SELECT
         t.IBGE ibge,
-        ibge.regiao,
-        ibge.Nome_Cidade nome_cidade,
-        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS quantidade_anterior,
-        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS quantidade_atual
+        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS backlog_semana_anterior,
+        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS backlog_semana_atual
     FROM [eaf_tvro].[ticket_view] t
     LEFT JOIN [eaf_tvro].[ibge]
     ON t.IBGE = ibge.cIBGE
@@ -83,9 +77,7 @@ def backlog():
     AND StatusdaInstalação NOT IN ('Remarcada Fornecedor', 'Cancelada') AND LOWER(Assunto) NOT LIKE '%zendesk%'
     AND CAST(DataHoraAgendamento AS DATE) < GETDATE() AND CAST(DataHoraAgendamento AS DATE) IS NOT NULL
     GROUP BY
-    t.IBGE,
-    ibge.regiao,
-    ibge.Nome_Cidade
+    t.IBGE
     '''
     resultado = session.execute(text(consulta_sql))
     backlog = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
@@ -112,10 +104,8 @@ def instalados():
     consulta_sql = '''
     SELECT
         t.IBGE ibge,
-        ibge.regiao,
-        ibge.Nome_Cidade nome_cidade,
-        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS quantidade_anterior,
-        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS quantidade_atual
+        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS instalados_semana_anterior,
+        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS instalados_semana_atual
     FROM [eaf_tvro].[ticket_view] t
     LEFT JOIN [eaf_tvro].[ibge]
     ON t.IBGE = ibge.cIBGE
@@ -123,9 +113,7 @@ def instalados():
     MotivodocontatoInstalação NOT IN ('Cobrança Indevida', 'Contestação', 'Reclamação por problema técnico', 'Manutenção', 'Manutenção - Problema Técnico', 'Manutenção - Técnico Não Compareceu')
     AND LOWER(Assunto) NOT LIKE '%zendesk%'
     GROUP BY
-    t.IBGE,
-    ibge.regiao,
-    ibge.Nome_Cidade
+    t.IBGE
     '''
     resultado = session.execute(text(consulta_sql))
     instalados = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
@@ -151,7 +139,9 @@ def todos_ibges():
 
     consulta_sql = '''
     SELECT
-        cIBGE ibge
+        cIBGE ibge,
+        regiao,
+        nome_cidade
     FROM [eaf_tvro].[ibge]
     '''
     resultado = session.execute(text(consulta_sql))
