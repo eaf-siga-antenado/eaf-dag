@@ -190,11 +190,11 @@ def criar_df_final(**kwargs):
     ti = kwargs['ti']
     ibas = ti.xcom_pull(task_ids='cria_df_ibas')
     cadunico = ti.xcom_pull(task_ids='cadunico')
-    lista_cidades = ti.xcom_pull(task_ids='lista_cidades')
+    lista_de_cidades = ti.xcom_pull(task_ids='lista_de_cidades')
     new_agendados_semana_anterior = ti.xcom_pull(task_ids='new_agendados_semana_anterior')
     new_agendados_semana_atual = ti.xcom_pull(task_ids='new_agendados_semana_atual')
     df_final = ibas.merge(cadunico, how='left', on='ibge')\
-                   .merge(lista_cidades, how='left', on='ibge')\
+                   .merge(lista_de_cidades, how='left', on='ibge')\
                    .merge(new_agendados_semana_anterior, how='left', on='ibge')\
                    .merge(new_agendados_semana_atual, how='left', on='ibge')
 
