@@ -69,9 +69,9 @@ def backlog():
 
     consulta_sql = '''
     SELECT
-        t.IBGE,
+        t.IBGE ibge,
         ibge.regiao,
-        ibge.Nome_Cidade,
+        ibge.Nome_Cidade nome_cidade,
         SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS quantidade_anterior,
         SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS quantidade_atual
     FROM [eaf_tvro].[ticket_view] t
@@ -111,9 +111,9 @@ def instalados():
 
     consulta_sql = '''
     SELECT
-        t.IBGE,
+        t.IBGE ibge,
         ibge.regiao,
-        ibge.Nome_Cidade,
+        ibge.Nome_Cidade nome_cidade,
         SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS quantidade_anterior,
         SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS quantidade_atual
     FROM [eaf_tvro].[ticket_view] t
