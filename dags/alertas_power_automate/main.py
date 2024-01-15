@@ -1,5 +1,3 @@
-import csv
-import requests
 import pandas as pd
 from airflow import DAG
 from datetime import date
@@ -458,6 +456,7 @@ def cria_colunas_calculadas(**kwargs):
 def cidades_alertadas_pa(**kwargs):
     import pyodbc
     import pandas as pd
+    from datetime import date
     from airflow.models import Variable
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy import create_engine, text
@@ -484,7 +483,7 @@ def cidades_alertadas_pa(**kwargs):
             nome_cidade = row['nome_cidade'], 
             calculo_prevencao = row['calculo_prevencao'], 
             nivel_alerta = row['nivel_calculo_prevencao'], 
-            data_alerta = row['data_alerta']
+            data_alerta = date.today().strftime('%d-%m-%Y')
             server = 'sqlserver-eaf.database.windows.net'
             database = 'database-middleware'
             username = 'eaf_svc'
