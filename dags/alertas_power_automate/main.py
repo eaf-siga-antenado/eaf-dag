@@ -504,8 +504,8 @@ def cidades_alertadas_pa(**kwargs):
             agendados_semana_anterior = row['new_agendados_semana_anterior']
             agendados_semana_atual = row['new_agendados_semana_atual']
             variacao_agendamentos_semana = row['variacao_agendamentos_semana']
-            risco_semana_anterior = row['risco_semana_anterior']
-            risco_semana_atual = row['risco_semana_atual']
+            risco_semana_anterior = row['porcentagem_de_risco_semana_anterior']
+            risco_semana_atual = row['porcentagem_de_risco_semana_atual']
             curva = row['curva']
             calculo_prevencao = row['calculo_prevencao']
             insere_informacao = f"INSERT INTO eaf_tvro.disparo_alerta_pa (ibge, regiao, nome_cidade, agendados_semana_anterior, agendados_semana_atual, variacao_agendamentos_semana, risco_semana_anterior, risco_semana_atual, curva, calculo_prevencao) VALUES ('{ibge}', '{regiao}', '{nome_cidade}', '{agendados_semana_anterior}', '{agendados_semana_atual}', '{variacao_agendamentos_semana}', '{risco_semana_anterior}', '{risco_semana_atual}', '{curva}', '{calculo_prevencao}')"
