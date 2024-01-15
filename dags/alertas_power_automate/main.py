@@ -589,6 +589,12 @@ cria_colunas_calculadas = PythonOperator(
     dag=dag
 )
 
+cidades_alertadas_pa = PythonOperator(
+    task_id='cidades_alertadas_pa',
+    python_callable=cidades_alertadas_pa,
+    dag=dag
+)
+
 [backlog_futuro, backlog, instalados, todos_ibges] >> cria_df_ibas
 
-cria_df_ibas >> [lista_de_cidades, cadunico, new_agendados_semana_atual, new_agendados_semana_anterior] >> criar_df_final >> cria_colunas_calculadas
+cria_df_ibas >> [lista_de_cidades, cadunico, new_agendados_semana_atual, new_agendados_semana_anterior] >> criar_df_final >> cria_colunas_calculadas >> cidades_alertadas_pa
