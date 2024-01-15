@@ -460,8 +460,12 @@ def cidades_alertadas_pa(**kwargs):
     from airflow.models import Variable
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy import create_engine, text
-    print('DRIVERS:')
-    print(pyodbc.drivers())
+    server = 'sqlserver-eaf.database.windows.net'
+    database = 'database-middleware'
+    username = 'eaf_svc'
+    password = 'etzAf*!Hk4WX'
+    conn = pyodbc.connect(f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
+    cursor = conn.cursor()
     ti = kwargs['ti']
     df_final = ti.xcom_pull(task_ids='cria_colunas_calculadas')
     server = Variable.get('DBSERVER')
@@ -480,14 +484,7 @@ def cidades_alertadas_pa(**kwargs):
         calculo_prevencao = row['calculo_prevencao']
         if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevencao'] == calculo_prevencao)).any():
             pass
-        else:
-            server = 'sqlserver-eaf.database.windows.net'
-            database = 'database-middleware'
-            username = 'eaf_svc'
-            password = 'etzAf*!Hk4WX'
-            conn = pyodbc.connect(f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
-            cursor = conn.cursor()
-            
+        else:          
             ibge = row['ibge']
             nome_cidade = row['nome_cidade']
             calculo_prevencao = row['calculo_prevencao']
@@ -511,7 +508,7 @@ def cidades_alertadas_pa(**kwargs):
             insere_informacao = f"INSERT INTO eaf_tvro.disparo_alerta_pa (ibge, regiao, nome_cidade, agendados_semana_anterior, agendados_semana_atual, variacao_agendamentos_semana, risco_semana_anterior, risco_semana_atual, curva, calculo_prevencao) VALUES ('{ibge}', '{regiao}', '{nome_cidade}', {agendados_semana_anterior}, {agendados_semana_atual}, {variacao_agendamentos_semana}, {risco_semana_anterior}, {risco_semana_atual}, '{curva}', '{calculo_prevencao}')"
             cursor.execute(insere_informacao)
             cursor.commit()
-
+    cursor.close()
     print('DEU CERTO!!!')
 
 default_args = {
