@@ -508,14 +508,37 @@ def cidades_alertadas_pa(**kwargs):
             insere_informacao = f"INSERT INTO eaf_tvro.disparo_alerta_pa (ibge, regiao, nome_cidade, agendados_semana_anterior, agendados_semana_atual, variacao_agendamentos_semana, risco_semana_anterior, risco_semana_atual, curva, calculo_prevencao) VALUES ('{ibge}', '{regiao}', '{nome_cidade}', {agendados_semana_anterior}, {agendados_semana_atual}, {variacao_agendamentos_semana}, {risco_semana_anterior}, {risco_semana_atual}, '{curva}', '{calculo_prevencao}')"
             cursor.execute(insere_informacao)
             cursor.commit()
-            dataHora_disparo = datetime.now()
-            qtd_cidades = 4
-            insere_power_automate = f"INSERT INTO eaf_tvro.power_automate (dataHora_disparo, qtd_cidades) VALUES ({dataHora_disparo}, {qtd_cidades})"
-            cursor.execute(insere_power_automate)
-            cursor.commit()
 
     cursor.close()
     print('DEU CERTO!!!')
+
+def envia_info_power_automate():
+
+    import pandas as pd
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    consulta_sql = '''
+    SELECT 
+        *
+    FROM eaf_tvro.disparo_alerta_pa
+    '''
+    resultado = session.execute(text(consulta_sql))
+    disparo_alerta_pa = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+
+    df_power_automate = pd.DataFrame({'dataHora_disparo': [datetime.now()], 'qtd_cidades': [len(disparo_alerta_pa)]})
+    df_power_automate.to_sql("power_automate", engine, if_exists='append', schema='eaf_tvro', index=False)
 
 default_args = {
     'start_date': datetime(2023, 8, 18, 6, 0, 0),
@@ -601,6 +624,12 @@ cidades_alertadas_pa = PythonOperator(
     dag=dag
 )
 
+envia_info_power_automate = PythonOperator(
+    task_id='envia_info_power_automate',
+    python_callable=envia_info_power_automate,
+    dag=dag
+)
+
 [backlog_futuro, backlog, instalados, todos_ibges] >> cria_df_ibas
 
-cria_df_ibas >> [lista_de_cidades, cadunico, new_agendados_semana_atual, new_agendados_semana_anterior] >> criar_df_final >> cria_colunas_calculadas >> cidades_alertadas_pa
+cria_df_ibas >> [lista_de_cidades, cadunico, new_agendados_semana_atual, new_agendados_semana_anterior] >> criar_df_final >> cria_colunas_calculadas >> cidades_alertadas_pa >> envia_info_power_automate
