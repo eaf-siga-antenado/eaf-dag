@@ -489,7 +489,7 @@ def cidades_alertadas_pa(**kwargs):
             username = 'eaf_svc'
             password = 'etzAf*!Hk4WX'
 
-            conn = pyodbc.connect(f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
+            conn = pyodbc.connect(f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
             cursor = conn.cursor()
             insere_informacao = f"INSERT INTO [eaf_tvro].[cidades_alertadas_pa] (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ({ibge}, {nome_cidade}, {calculo_prevencao}, {nivel_alerta}, {data_alerta})"
             cursor.execute(insere_informacao)
