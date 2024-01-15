@@ -492,7 +492,7 @@ def cidades_alertadas_pa(**kwargs):
 
             conn = pyodbc.connect(f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
             cursor = conn.cursor()
-            insere_informacao = f"INSERT INTO [eaf_tvro].[cidades_alertadas_pa] (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ({ibge}, {nome_cidade}, {calculo_prevencao}, {nivel_alerta}, {data_alerta})"
+            insere_informacao = f"INSERT INTO [eaf_tvro].[cidades_alertadas_pa] (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ('{ibge}', '{nome_cidade}', '{calculo_prevencao}', '{nivel_alerta}', '{data_alerta}')"
             cursor.execute(insere_informacao)
             cursor.commit()
             ibge = row['ibge']
@@ -505,7 +505,7 @@ def cidades_alertadas_pa(**kwargs):
             risco_semana_atual = row['risco_semana_atual']
             curva = row['curva']
             calculo_prevencao = row['calculo_prevencao']
-            insere_informacao = f"INSERT INTO [eaf_tvro].[disparo_alerta_pa] (ibge, regiao, nome_cidade, agendados_semana_anterior, agendados_semana_atual, variacao_agendamentos_semana, risco_semana_anterior, risco_semana_atual, curva, calculo_prevencao) VALUES ({ibge}, {regiao}, {nome_cidade}, {agendados_semana_anterior}, {agendados_semana_atual}, {variacao_agendamentos_semana}, {risco_semana_anterior}, {risco_semana_atual}, {curva}, {calculo_prevencao})"
+            insere_informacao = f"INSERT INTO [eaf_tvro].[disparo_alerta_pa] (ibge, regiao, nome_cidade, agendados_semana_anterior, agendados_semana_atual, variacao_agendamentos_semana, risco_semana_anterior, risco_semana_atual, curva, calculo_prevencao) VALUES ('{ibge}', '{regiao}', '{nome_cidade}', '{agendados_semana_anterior}', '{agendados_semana_atual}', '{variacao_agendamentos_semana}', '{risco_semana_anterior}', '{risco_semana_atual}', '{curva}', '{calculo_prevencao}')"
             cursor.execute(insere_informacao)
             cursor.commit()
 
