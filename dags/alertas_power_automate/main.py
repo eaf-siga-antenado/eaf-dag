@@ -508,11 +508,12 @@ def cidades_alertadas_pa(**kwargs):
             insere_informacao = f"INSERT INTO eaf_tvro.disparo_alerta_pa (ibge, regiao, nome_cidade, agendados_semana_anterior, agendados_semana_atual, variacao_agendamentos_semana, risco_semana_anterior, risco_semana_atual, curva, calculo_prevencao) VALUES ('{ibge}', '{regiao}', '{nome_cidade}', {agendados_semana_anterior}, {agendados_semana_atual}, {variacao_agendamentos_semana}, {risco_semana_anterior}, {risco_semana_atual}, '{curva}', '{calculo_prevencao}')"
             cursor.execute(insere_informacao)
             cursor.commit()
+            dataHora_disparo = datetime.now()
             qtd_cidades = 4
-            insere_power_automate = f"INSERT INTO eaf_tvro.power_automate (dataHora_disparo, qtd_cidades) VALUES ('{data_alerta}', {qtd_cidades})"
+            insere_power_automate = f"INSERT INTO eaf_tvro.power_automate (dataHora_disparo, qtd_cidades) VALUES ({dataHora_disparo}, {qtd_cidades})"
             cursor.execute(insere_power_automate)
             cursor.commit()
-            
+
     cursor.close()
     print('DEU CERTO!!!')
 
