@@ -453,20 +453,63 @@ def cria_colunas_calculadas(**kwargs):
     df_final['calculo_prevencao'] = df_final.apply(calculo_prevencao_funcao, axis=1)
     df_final['nivel_calculo_prevencao'] = df_final.apply(nivel_prevencao_funcao, axis=1)
     df_final = df_final[df_final['nivel_calculo_prevencao'] >= 2]
-    print(df_final.head())
+    return df_final
 
-# def envio_banco_dados(**kwargs):
+def cidades_alertadas_pa(**kwargs):
+    import pyodbc
+    import pandas as pd
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+    ti = kwargs['ti']
+    df_final = ti.xcom_pull(task_ids='cria_colunas_calculadas')
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    consulta_sql = ' SELECT * FROM eaf_tvro.cidades_alertadas_pa'
+    resultado = session.execute(text(consulta_sql))
+    cidades_alertadas_pa = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    if len(cidades_alertadas_pa) > 0:
+        for _, row in df_final.iterrows():
+            ibge = row['ibge']
+            calculo_prevensao = row['calculo_prevensao']
+            if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevensao'] == calculo_prevensao)).any():
+                pass
+            else:
+                ibge = row['ibge'], 
+                nome_cidade = row['nome_cidade'], 
+                calculo_prevencao = row['calculo_prevencao'], 
+                nivel_alerta = row['nivel_alerta'], 
+                data_alerta = row['data_alerta']
+                server = 'sqlserver-eaf.database.windows.net'
+                database = 'database-middleware'
+                username = 'eaf_svc'
+                password = 'etzAf*!Hk4WX'
 
-#     ti = kwargs['ti']
-#     subir = ti.xcom_pull(task_ids='tratando_dados')
+                conn = pyodbc.connect(f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
+                cursor = conn.cursor()
+                insere_informacao = f"INSERT INTO [eaf_tvro].[cidades_alertadas_pa] (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ({ibge}, {nome_cidade}, {calculo_prevencao}, {nivel_alerta}, {data_alerta})"
+                cursor.execute(insere_informacao)
+                cursor.commit()
+                ibge = row['ibge']
+                regiao = row['regiao']
+                nome_cidade = row['nome_cidade']
+                agendados_semana_anterior = row['agendados_semana_anterior']
+                agendados_semana_atual = row['agendados_semana_atual']
+                variacao_agendamentos_semana = row['variacao_agendamentos_semana']
+                risco_semana_anterior = row['risco_semana_anterior']
+                risco_semana_atual = row['risco_semana_atual']
+                curva = row['curva']
+                calculo_prevencao = row['calculo_prevencao']
+                insere_informacao = f"INSERT INTO [eaf_tvro].[disparo_alerta_pa] (ibge, regiao, nome_cidade, agendados_semana_anterior, agendados_semana_atual, variacao_agendamentos_semana, risco_semana_anterior, risco_semana_atual, curva, calculo_prevencao) VALUES ({ibge}, {regiao}, {nome_cidade}, {agendados_semana_anterior}, {agendados_semana_atual}, {variacao_agendamentos_semana}, {risco_semana_anterior}, {risco_semana_atual}, {curva}, {calculo_prevencao})"
+                cursor.execute(insere_informacao)
+                cursor.commit()
 
-#     server = Variable.get('DBSERVER')
-#     database = Variable.get('DATABASE')
-#     username = Variable.get('DBUSER')
-#     password = Variable.get('DBPASSWORD')
-#     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
-
-#     subir.to_sql("capacidade_instaladoras", engine, if_exists='replace', schema='eaf_tvro', index=False)
+    print('DEU CERTO!!!')
 
 default_args = {
     'start_date': datetime(2023, 8, 18, 6, 0, 0),
@@ -479,12 +522,6 @@ dag = DAG(
     schedule_interval='20 11 * * *',
     catchup=False
 )
-
-# envio_banco_dados = PythonOperator(
-#     task_id='envio_banco_dados',
-#     python_callable=envio_banco_dados,
-#     dag=dag
-# )
 
 new_agendados_semana_atual = PythonOperator(
     task_id='new_agendados_semana_atual',
