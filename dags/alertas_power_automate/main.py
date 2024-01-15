@@ -476,8 +476,8 @@ def cidades_alertadas_pa(**kwargs):
     # if len(cidades_alertadas_pa) > 0:
     for _, row in df_final.iterrows():
         ibge = row['ibge']
-        calculo_prevensao = row['calculo_prevensao']
-        if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevensao'] == calculo_prevensao)).any():
+        calculo_prevencao = row['calculo_prevencao']
+        if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevencao'] == calculo_prevencao)).any():
             pass
         else:
             ibge = row['ibge'], 
