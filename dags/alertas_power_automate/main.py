@@ -479,11 +479,12 @@ def cidades_alertadas_pa(**kwargs):
         if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevencao'] == calculo_prevencao)).any():
             pass
         else:
-            ibge = row['ibge'], 
-            nome_cidade = row['nome_cidade'], 
-            calculo_prevencao = row['calculo_prevencao'], 
-            nivel_alerta = row['nivel_calculo_prevencao'], 
+            ibge = row['ibge'],
+            nome_cidade = row['nome_cidade']
+            calculo_prevencao = row['calculo_prevencao']
+            nivel_alerta = row['nivel_calculo_prevencao']
             data_alerta = date.today().strftime('%d-%m-%Y')
+
             server = 'sqlserver-eaf.database.windows.net'
             database = 'database-middleware'
             username = 'eaf_svc'
