@@ -473,41 +473,41 @@ def cidades_alertadas_pa(**kwargs):
     consulta_sql = ' SELECT * FROM eaf_tvro.cidades_alertadas_pa'
     resultado = session.execute(text(consulta_sql))
     cidades_alertadas_pa = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
-    if len(cidades_alertadas_pa) > 0:
-        for _, row in df_final.iterrows():
-            ibge = row['ibge']
-            calculo_prevensao = row['calculo_prevensao']
-            if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevensao'] == calculo_prevensao)).any():
-                pass
-            else:
-                ibge = row['ibge'], 
-                nome_cidade = row['nome_cidade'], 
-                calculo_prevencao = row['calculo_prevencao'], 
-                nivel_alerta = row['nivel_alerta'], 
-                data_alerta = row['data_alerta']
-                server = 'sqlserver-eaf.database.windows.net'
-                database = 'database-middleware'
-                username = 'eaf_svc'
-                password = 'etzAf*!Hk4WX'
+    # if len(cidades_alertadas_pa) > 0:
+    for _, row in df_final.iterrows():
+        ibge = row['ibge']
+        calculo_prevensao = row['calculo_prevensao']
+        if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevensao'] == calculo_prevensao)).any():
+            pass
+        else:
+            ibge = row['ibge'], 
+            nome_cidade = row['nome_cidade'], 
+            calculo_prevencao = row['calculo_prevencao'], 
+            nivel_alerta = row['nivel_alerta'], 
+            data_alerta = row['data_alerta']
+            server = 'sqlserver-eaf.database.windows.net'
+            database = 'database-middleware'
+            username = 'eaf_svc'
+            password = 'etzAf*!Hk4WX'
 
-                conn = pyodbc.connect(f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
-                cursor = conn.cursor()
-                insere_informacao = f"INSERT INTO [eaf_tvro].[cidades_alertadas_pa] (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ({ibge}, {nome_cidade}, {calculo_prevencao}, {nivel_alerta}, {data_alerta})"
-                cursor.execute(insere_informacao)
-                cursor.commit()
-                ibge = row['ibge']
-                regiao = row['regiao']
-                nome_cidade = row['nome_cidade']
-                agendados_semana_anterior = row['agendados_semana_anterior']
-                agendados_semana_atual = row['agendados_semana_atual']
-                variacao_agendamentos_semana = row['variacao_agendamentos_semana']
-                risco_semana_anterior = row['risco_semana_anterior']
-                risco_semana_atual = row['risco_semana_atual']
-                curva = row['curva']
-                calculo_prevencao = row['calculo_prevencao']
-                insere_informacao = f"INSERT INTO [eaf_tvro].[disparo_alerta_pa] (ibge, regiao, nome_cidade, agendados_semana_anterior, agendados_semana_atual, variacao_agendamentos_semana, risco_semana_anterior, risco_semana_atual, curva, calculo_prevencao) VALUES ({ibge}, {regiao}, {nome_cidade}, {agendados_semana_anterior}, {agendados_semana_atual}, {variacao_agendamentos_semana}, {risco_semana_anterior}, {risco_semana_atual}, {curva}, {calculo_prevencao})"
-                cursor.execute(insere_informacao)
-                cursor.commit()
+            conn = pyodbc.connect(f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
+            cursor = conn.cursor()
+            insere_informacao = f"INSERT INTO [eaf_tvro].[cidades_alertadas_pa] (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ({ibge}, {nome_cidade}, {calculo_prevencao}, {nivel_alerta}, {data_alerta})"
+            cursor.execute(insere_informacao)
+            cursor.commit()
+            ibge = row['ibge']
+            regiao = row['regiao']
+            nome_cidade = row['nome_cidade']
+            agendados_semana_anterior = row['agendados_semana_anterior']
+            agendados_semana_atual = row['agendados_semana_atual']
+            variacao_agendamentos_semana = row['variacao_agendamentos_semana']
+            risco_semana_anterior = row['risco_semana_anterior']
+            risco_semana_atual = row['risco_semana_atual']
+            curva = row['curva']
+            calculo_prevencao = row['calculo_prevencao']
+            insere_informacao = f"INSERT INTO [eaf_tvro].[disparo_alerta_pa] (ibge, regiao, nome_cidade, agendados_semana_anterior, agendados_semana_atual, variacao_agendamentos_semana, risco_semana_anterior, risco_semana_atual, curva, calculo_prevencao) VALUES ({ibge}, {regiao}, {nome_cidade}, {agendados_semana_anterior}, {agendados_semana_atual}, {variacao_agendamentos_semana}, {risco_semana_anterior}, {risco_semana_atual}, {curva}, {calculo_prevencao})"
+            cursor.execute(insere_informacao)
+            cursor.commit()
 
     print('DEU CERTO!!!')
 
