@@ -537,7 +537,7 @@ def envia_info_power_automate():
     resultado = session.execute(text(consulta_sql))
     disparo_alerta_pa = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
 
-    df_power_automate = pd.DataFrame({'dataHora_disparo': [datetime.now()], 'qtd_cidades': [len(disparo_alerta_pa)]})
+    df_power_automate = pd.DataFrame({'dataHora_disparo': [(datetime.now() - timedelta(hours=3))], 'qtd_cidades': [len(disparo_alerta_pa)]})
     df_power_automate.to_sql("power_automate", engine, if_exists='append', schema='eaf_tvro', index=False)
 
 default_args = {
