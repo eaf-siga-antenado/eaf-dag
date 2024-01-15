@@ -483,7 +483,7 @@ def cidades_alertadas_pa(**kwargs):
             ibge = row['ibge'], 
             nome_cidade = row['nome_cidade'], 
             calculo_prevencao = row['calculo_prevencao'], 
-            nivel_alerta = row['nivel_alerta'], 
+            nivel_alerta = row['nivel_calculo_prevencao'], 
             data_alerta = row['data_alerta']
             server = 'sqlserver-eaf.database.windows.net'
             database = 'database-middleware'
