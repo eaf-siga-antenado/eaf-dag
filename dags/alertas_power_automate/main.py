@@ -460,6 +460,8 @@ def cidades_alertadas_pa(**kwargs):
     from airflow.models import Variable
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy import create_engine, text
+    print('DRIVERS:')
+    print(pyodbc.drivers())
     ti = kwargs['ti']
     df_final = ti.xcom_pull(task_ids='cria_colunas_calculadas')
     server = Variable.get('DBSERVER')
@@ -479,20 +481,21 @@ def cidades_alertadas_pa(**kwargs):
         if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevencao'] == calculo_prevencao)).any():
             pass
         else:
+            server = 'sqlserver-eaf.database.windows.net'
+            database = 'database-middleware'
+            username = 'eaf_svc'
+            password = 'etzAf*!Hk4WX'
+            conn = pyodbc.connect(f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
+            cursor = conn.cursor()
+            
             ibge = row['ibge'],
             nome_cidade = row['nome_cidade']
             calculo_prevencao = row['calculo_prevencao']
             nivel_alerta = row['nivel_calculo_prevencao']
             data_alerta = date.today().strftime('%d-%m-%Y')
-
-            server = 'sqlserver-eaf.database.windows.net'
-            database = 'database-middleware'
-            username = 'eaf_svc'
-            password = 'etzAf*!Hk4WX'
-
-            conn = pyodbc.connect(f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
-            cursor = conn.cursor()
-            insere_informacao = f"INSERT INTO eaf_tvro.cidades_alertadas_pa (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ('{ibge}', '{nome_cidade}', '{calculo_prevencao}', '{nivel_alerta}', '{data_alerta}')"
+            insere_informacao = f"INSERT INTO eaf_tvro.cidades_alertadas_pa (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ('{ibge}', '{nome_cidade}', '{calculo_prevencao}', {nivel_alerta}, '{data_alerta}')"
+            print('VALOES:')
+            print(insere_informacao)
             cursor.execute(insere_informacao)
             cursor.commit()
             ibge = row['ibge']
