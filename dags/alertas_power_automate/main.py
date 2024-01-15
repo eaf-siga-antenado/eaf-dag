@@ -488,7 +488,7 @@ def cidades_alertadas_pa(**kwargs):
             conn = pyodbc.connect(f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
             cursor = conn.cursor()
             
-            ibge = row['ibge'],
+            ibge = row['ibge']
             nome_cidade = row['nome_cidade']
             calculo_prevencao = row['calculo_prevencao']
             nivel_alerta = row['nivel_calculo_prevencao']
