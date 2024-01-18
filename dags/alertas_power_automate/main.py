@@ -137,9 +137,10 @@ def todos_ibges():
 
     consulta_sql = '''
     SELECT
-        cIBGE ibge,
-        regiao,
-        nome_cidade
+        cIBGE IBGE,
+        regiao Região,
+        CONCAT(UF, ' - ', nome_cidade) [UF - Município],
+        Fase
     FROM [eaf_tvro].[ibge]
     '''
     resultado = session.execute(text(consulta_sql))
@@ -453,66 +454,66 @@ def cria_colunas_calculadas(**kwargs):
     df_final = df_final[df_final['nivel_calculo_prevencao'] >= 2]
     return df_final
 
-def cidades_alertadas_pa(**kwargs):
-    import pyodbc
-    import pandas as pd
-    from datetime import date
-    from airflow.models import Variable
-    from sqlalchemy.orm import sessionmaker
-    from sqlalchemy import create_engine, text
-    server = 'sqlserver-eaf.database.windows.net'
-    database = 'database-middleware'
-    username = 'eaf_svc'
-    password = 'etzAf*!Hk4WX'
-    conn = pyodbc.connect(f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
-    cursor = conn.cursor()
-    ti = kwargs['ti']
-    df_final = ti.xcom_pull(task_ids='cria_colunas_calculadas')
-    server = Variable.get('DBSERVER')
-    database = Variable.get('DATABASE')
-    username = Variable.get('DBUSER')
-    password = Variable.get('DBPASSWORD')
-    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    consulta_sql = ' SELECT * FROM eaf_tvro.cidades_alertadas_pa'
-    resultado = session.execute(text(consulta_sql))
-    cidades_alertadas_pa = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
-    # if len(cidades_alertadas_pa) > 0:
-    for _, row in df_final.iterrows():
-        ibge = row['ibge']
-        calculo_prevencao = row['calculo_prevencao']
-        if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevencao'] == calculo_prevencao)).any():
-            pass
-        else:          
-            ibge = row['ibge']
-            nome_cidade = row['nome_cidade']
-            calculo_prevencao = row['calculo_prevencao']
-            nivel_alerta = row['nivel_calculo_prevencao']
-            data_alerta = date.today().strftime('%d-%m-%Y')
-            insere_informacao = f"INSERT INTO eaf_tvro.cidades_alertadas_pa (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ('{ibge}', '{nome_cidade}', '{calculo_prevencao}', {nivel_alerta}, '{data_alerta}')"
-            print('VALOES:')
-            print(insere_informacao)
-            cursor.execute(insere_informacao)
-            cursor.commit()
-            ibge = row['ibge']
-            regiao = row['regiao']
-            nome_cidade = row['nome_cidade']
-            agendados_semana_anterior = row['new_agendados_semana_anterior']
-            agendados_semana_atual = row['new_agendados_semana_atual']
-            variacao_agendamentos_semana = row['variacao_agendamentos_semana']
-            risco_semana_anterior = row['porcentagem_de_risco_semana_anterior']
-            risco_semana_atual = row['porcentagem_de_risco_semana_atual']
-            curva = row['curva']
-            calculo_prevencao = row['calculo_prevencao']
-            insere_informacao = f"INSERT INTO eaf_tvro.disparo_alerta_pa (ibge, regiao, nome_cidade, agendados_semana_anterior, agendados_semana_atual, variacao_agendamentos_semana, risco_semana_anterior, risco_semana_atual, curva, calculo_prevencao) VALUES ('{ibge}', '{regiao}', '{nome_cidade}', {agendados_semana_anterior}, {agendados_semana_atual}, {variacao_agendamentos_semana}, {risco_semana_anterior}, {risco_semana_atual}, '{curva}', '{calculo_prevencao}')"
-            cursor.execute(insere_informacao)
-            cursor.commit()
+# def cidades_alertadas_pa(**kwargs):
+#     import pyodbc
+#     import pandas as pd
+#     from datetime import date
+#     from airflow.models import Variable
+#     from sqlalchemy.orm import sessionmaker
+#     from sqlalchemy import create_engine, text
+#     server = 'sqlserver-eaf.database.windows.net'
+#     database = 'database-middleware'
+#     username = 'eaf_svc'
+#     password = 'etzAf*!Hk4WX'
+#     conn = pyodbc.connect(f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
+#     cursor = conn.cursor()
+#     ti = kwargs['ti']
+#     df_final = ti.xcom_pull(task_ids='cria_colunas_calculadas')
+#     server = Variable.get('DBSERVER')
+#     database = Variable.get('DATABASE')
+#     username = Variable.get('DBUSER')
+#     password = Variable.get('DBPASSWORD')
+#     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+#     Session = sessionmaker(bind=engine)
+#     session = Session()
+#     consulta_sql = ' SELECT * FROM eaf_tvro.cidades_alertadas_pa'
+#     resultado = session.execute(text(consulta_sql))
+#     cidades_alertadas_pa = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+#     # if len(cidades_alertadas_pa) > 0:
+#     for _, row in df_final.iterrows():
+#         ibge = row['ibge']
+#         calculo_prevencao = row['calculo_prevencao']
+#         if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevencao'] == calculo_prevencao)).any():
+#             pass
+#         else:          
+#             ibge = row['ibge']
+#             nome_cidade = row['nome_cidade']
+#             calculo_prevencao = row['calculo_prevencao']
+#             nivel_alerta = row['nivel_calculo_prevencao']
+#             data_alerta = date.today().strftime('%d-%m-%Y')
+#             insere_informacao = f"INSERT INTO eaf_tvro.cidades_alertadas_pa (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ('{ibge}', '{nome_cidade}', '{calculo_prevencao}', {nivel_alerta}, '{data_alerta}')"
+#             print('VALOES:')
+#             print(insere_informacao)
+#             cursor.execute(insere_informacao)
+#             cursor.commit()
+#             ibge = row['ibge']
+#             regiao = row['regiao']
+#             nome_cidade = row['nome_cidade']
+#             agendados_semana_anterior = row['new_agendados_semana_anterior']
+#             agendados_semana_atual = row['new_agendados_semana_atual']
+#             variacao_agendamentos_semana = row['variacao_agendamentos_semana']
+#             risco_semana_anterior = row['porcentagem_de_risco_semana_anterior']
+#             risco_semana_atual = row['porcentagem_de_risco_semana_atual']
+#             curva = row['curva']
+#             calculo_prevencao = row['calculo_prevencao']
+#             insere_informacao = f"INSERT INTO eaf_tvro.disparo_alerta_pa (ibge, regiao, nome_cidade, agendados_semana_anterior, agendados_semana_atual, variacao_agendamentos_semana, risco_semana_anterior, risco_semana_atual, curva, calculo_prevencao) VALUES ('{ibge}', '{regiao}', '{nome_cidade}', {agendados_semana_anterior}, {agendados_semana_atual}, {variacao_agendamentos_semana}, {risco_semana_anterior}, {risco_semana_atual}, '{curva}', '{calculo_prevencao}')"
+#             cursor.execute(insere_informacao)
+#             cursor.commit()
 
-    cursor.close()
-    print('DEU CERTO!!!')
+#     cursor.close()
+#     print('DEU CERTO!!!')
 
-def envia_info_power_automate():
+# def envia_info_power_automate():
 
     import pandas as pd
     from airflow.models import Variable
@@ -618,18 +619,18 @@ cria_colunas_calculadas = PythonOperator(
     dag=dag
 )
 
-cidades_alertadas_pa = PythonOperator(
-    task_id='cidades_alertadas_pa',
-    python_callable=cidades_alertadas_pa,
-    dag=dag
-)
+# cidades_alertadas_pa = PythonOperator(
+#     task_id='cidades_alertadas_pa',
+#     python_callable=cidades_alertadas_pa,
+#     dag=dag
+# )
 
-envia_info_power_automate = PythonOperator(
-    task_id='envia_info_power_automate',
-    python_callable=envia_info_power_automate,
-    dag=dag
-)
+# envia_info_power_automate = PythonOperator(
+#     task_id='envia_info_power_automate',
+#     python_callable=envia_info_power_automate,
+#     dag=dag
+# )
 
 [backlog_futuro, backlog, instalados, todos_ibges] >> cria_df_ibas
 
-cria_df_ibas >> [lista_de_cidades, cadunico, new_agendados_semana_atual, new_agendados_semana_anterior] >> criar_df_final >> cria_colunas_calculadas >> cidades_alertadas_pa >> envia_info_power_automate
+cria_df_ibas >> [lista_de_cidades, cadunico, new_agendados_semana_atual, new_agendados_semana_anterior] >> criar_df_final >> cria_colunas_calculadas # >> cidades_alertadas_pa >> envia_info_power_automate
