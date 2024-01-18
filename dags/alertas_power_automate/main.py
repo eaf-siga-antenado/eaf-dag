@@ -505,7 +505,7 @@ def cidades_alertadas_pa(**kwargs):
         ibge = row['ibge']
         regiao = row['regiao']
         uf = row['uf']
-        fase = row['fase']
+        fase = row['fase_x']
         nome_cidade = row['nome_cidade']
         agendados_semana_anterior = row['new_agendados_semana_anterior']
         agendados_semana_atual = row['new_agendados_semana_atual']
