@@ -487,36 +487,36 @@ def cidades_alertadas_pa(**kwargs):
     cidades_alertadas_pa = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
     # if len(cidades_alertadas_pa) > 0:
     for _, row in df_final.iterrows():
-        ibge = row['IBGE']
-        calculo_prevencao = row['Cor do alerta']
-        if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevencao'] == calculo_prevencao)).any():
-            pass
-        else:          
-            ibge = row['ibge']
-            nome_cidade = row['nome_cidade']
-            calculo_prevencao = row['calculo_prevencao']
-            nivel_alerta = row['nivel_calculo_prevencao']
-            data_alerta = date.today().strftime('%d-%m-%Y')
-            insere_informacao = f"INSERT INTO eaf_tvro.cidades_alertadas_pa (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ('{ibge}', '{nome_cidade}', '{calculo_prevencao}', {nivel_alerta}, '{data_alerta}')"
-            print('VALOES:')
-            print(insere_informacao)
-            cursor.execute(insere_informacao)
-            cursor.commit()
-            ibge = row['ibge']
-            regiao = row['regiao']
-            uf = row['uf']
-            fase = row['fase']
-            nome_cidade = row['nome_cidade']
-            agendados_semana_anterior = row['new_agendados_semana_anterior']
-            agendados_semana_atual = row['new_agendados_semana_atual']
-            variacao_agendamentos_semana = row['variacao_agendamentos_semana']
-            risco_semana_anterior = row['porcentagem_de_risco_semana_anterior']
-            risco_semana_atual = row['porcentagem_de_risco_semana_atual']
-            curva = row['curva']
-            calculo_prevencao = row['calculo_prevencao']
-            insere_informacao = f"INSERT INTO eaf_tvro.disparo_alerta_pa (IBGE, Região, UF, [Município], Fase, Curva, [Agendamentos Semana Anterior], [Agendamentos Semana Atual], [% Variação Agendamentos Semana], [% Risco Semana Anterior], [% Risco Semana Atual], [Cor do alerta]) VALUES ('{ibge}', '{regiao}', '{uf}', '{nome_cidade}', '{fase}', '{curva}', {agendados_semana_anterior}, {agendados_semana_atual}, {variacao_agendamentos_semana}, {risco_semana_anterior}, {risco_semana_atual}, '{calculo_prevencao}')"
-            cursor.execute(insere_informacao)
-            cursor.commit()
+        # ibge = row['IBGE']
+        # calculo_prevencao = row['Cor do alerta']
+        # if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevencao'] == calculo_prevencao)).any():
+        #     pass
+        # else:          
+        ibge = row['ibge']
+        nome_cidade = row['nome_cidade']
+        calculo_prevencao = row['calculo_prevencao']
+        nivel_alerta = row['nivel_calculo_prevencao']
+        data_alerta = date.today().strftime('%d-%m-%Y')
+        insere_informacao = f"INSERT INTO eaf_tvro.cidades_alertadas_pa (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ('{ibge}', '{nome_cidade}', '{calculo_prevencao}', {nivel_alerta}, '{data_alerta}')"
+        print('VALORES:')
+        print(insere_informacao)
+        cursor.execute(insere_informacao)
+        cursor.commit()
+        ibge = row['ibge']
+        regiao = row['regiao']
+        uf = row['uf']
+        fase = row['fase']
+        nome_cidade = row['nome_cidade']
+        agendados_semana_anterior = row['new_agendados_semana_anterior']
+        agendados_semana_atual = row['new_agendados_semana_atual']
+        variacao_agendamentos_semana = row['variacao_agendamentos_semana']
+        risco_semana_anterior = row['porcentagem_de_risco_semana_anterior']
+        risco_semana_atual = row['porcentagem_de_risco_semana_atual']
+        curva = row['curva']
+        calculo_prevencao = row['calculo_prevencao']
+        insere_informacao = f"INSERT INTO eaf_tvro.disparo_alerta_pa (IBGE, Região, UF, [Município], Fase, Curva, [Agendamentos Semana Anterior], [Agendamentos Semana Atual], [% Variação Agendamentos Semana], [% Risco Semana Anterior], [% Risco Semana Atual], [Cor do alerta]) VALUES ('{ibge}', '{regiao}', '{uf}', '{nome_cidade}', '{fase}', '{curva}', {agendados_semana_anterior}, {agendados_semana_atual}, {variacao_agendamentos_semana}, {risco_semana_anterior}, {risco_semana_atual}, '{calculo_prevencao}')"
+        cursor.execute(insere_informacao)
+        cursor.commit()
 
     cursor.close()
     print('DEU CERTO!!!')
