@@ -482,13 +482,13 @@ def cidades_alertadas_pa(**kwargs):
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
     Session = sessionmaker(bind=engine)
     session = Session()
-    consulta_sql = ' SELECT * FROM eaf_tvro.cidades_alertadas_pa'
+    consulta_sql = 'SELECT * FROM eaf_tvro.cidades_alertadas_pa'
     resultado = session.execute(text(consulta_sql))
     cidades_alertadas_pa = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
     # if len(cidades_alertadas_pa) > 0:
     for _, row in df_final.iterrows():
-        ibge = row['ibge']
-        calculo_prevencao = row['calculo_prevencao']
+        ibge = row['IBGE']
+        calculo_prevencao = row['Cor do alerta']
         if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevencao'] == calculo_prevencao)).any():
             pass
         else:          
