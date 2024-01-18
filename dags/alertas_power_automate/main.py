@@ -137,7 +137,7 @@ def todos_ibges():
 
     consulta_sql = '''
     SELECT
-        cIBGE IBGE,
+        cIBGE ibge,
         regiao Região,
         CONCAT(UF, ' - ', nome_cidade) [UF - Município],
         Fase
@@ -452,6 +452,8 @@ def cria_colunas_calculadas(**kwargs):
     df_final['calculo_prevencao'] = df_final.apply(calculo_prevencao_funcao, axis=1)
     df_final['nivel_calculo_prevencao'] = df_final.apply(nivel_prevencao_funcao, axis=1)
     df_final = df_final[df_final['nivel_calculo_prevencao'] >= 2]
+    print('as colunas que temos são as seguintes:')
+    print(df_final.columns)
     return df_final
 
 # def cidades_alertadas_pa(**kwargs):
