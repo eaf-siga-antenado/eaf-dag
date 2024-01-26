@@ -570,17 +570,9 @@ def envia_info_power_automate(**kwargs):
     username = Variable.get('DBUSER')
     password = Variable.get('DBPASSWORD')
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    consulta_sql = '''
-    SELECT 
-        *
-    FROM eaf_tvro.disparo_alerta_pa
-    '''
-    resultado = session.execute(text(consulta_sql))
-    disparo_alerta_pa = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
-    df_power_automate = pd.DataFrame({'dataHora_disparo': [(datetime.now() - timedelta(hours=3))], 'qtd_cidades': [quantidade]})
-    df_power_automate.to_sql("power_automate", engine, if_exists='append', schema='eaf_tvro', index=False)
+    if quantidade > 0:
+        df_power_automate = pd.DataFrame({'dataHora_disparo': [(datetime.now() - timedelta(hours=3))], 'qtd_cidades': [quantidade]})
+        df_power_automate.to_sql("power_automate", engine, if_exists='append', schema='eaf_tvro', index=False)
 
 default_args = {
     'start_date': datetime(2023, 8, 18, 6, 0, 0),
