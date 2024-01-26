@@ -562,7 +562,7 @@ def envia_info_power_automate(**kwargs):
     from airflow.models import Variable
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy import create_engine, text
-    ti = kwargs[ti]
+    ti = kwargs['ti']
     quantidade = ti.xcom_pull(task_ids='cidades_alertadas_pa')
     print('VALOR DE QUANTIDADE EH:', quantidade)
     server = Variable.get('DBSERVER')
