@@ -481,7 +481,7 @@ def cidades_alertadas_pa(**kwargs):
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
     Session = sessionmaker(bind=engine)
     session = Session()
-    df_final.to_sql("df_final", engine, if_exists='fail', schema='eaf_tvro', index=False)
+    # df_final.to_sql("df_final", engine, if_exists='fail', schema='eaf_tvro', index=False)
     consulta_sql = 'SELECT * FROM eaf_tvro.cidades_alertadas_pa'
     resultado = session.execute(text(consulta_sql))
     cidades_alertadas_pa = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
