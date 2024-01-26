@@ -482,19 +482,19 @@ def cidades_alertadas_pa(**kwargs):
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
     Session = sessionmaker(bind=engine)
     session = Session()
+    df_final.to_sql("df_final", engine, if_exists='fail', schema='eaf_tvro', index=False)
     consulta_sql = 'SELECT * FROM eaf_tvro.cidades_alertadas_pa'
     resultado = session.execute(text(consulta_sql))
     cidades_alertadas_pa = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
     # if len(cidades_alertadas_pa) > 0:
     for _, row in df_final.iterrows():
         # ibge = row['IBGE']
-        # calculo_prevencao = row['Cor do alerta']
+        # calculo_prevencao = row['calculo_prevencao']
         # if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevencao'] == calculo_prevencao)).any():
         #     pass
         # else:          
         ibge = row['ibge']
-        nome_cidade = row['nome_cidade']
-        calculo_prevencao = row['calculo_prevencao']
+        nome_cidade =encao = row['calculo_prevencao']
         nivel_alerta = row['nivel_calculo_prevencao']
         data_alerta = date.today().strftime('%d-%m-%Y')
         insere_informacao = f"INSERT INTO eaf_tvro.cidades_alertadas_pa (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ('{ibge}', '{nome_cidade}', '{calculo_prevencao}', {nivel_alerta}, '{data_alerta}')"
@@ -504,7 +504,8 @@ def cidades_alertadas_pa(**kwargs):
         cursor.commit()
         ibge = row['ibge']
         regiao = row['regiao']
-        uf = row['uf']
+        uf = row['uf'] 
+        row['nome_cidade']
         fase = row['fase_x']
         nome_cidade = row['nome_cidade']
         agendados_semana_anterior = row['new_agendados_semana_anterior']
