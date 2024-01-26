@@ -231,7 +231,6 @@ def lista_de_cidades():
     consulta_sql = '''
     SELECT 
         [cód. IBGE] ibge,
-        FASE fase,
         [INÍCIO DE CAMPANHA] inicio_campanha,
         DATEDIFF(MONTH, [INÍCIO DE CAMPANHA], GETDATE()) diferenca_em_meses
     FROM eaf_tvro.lista_cidades
@@ -486,59 +485,93 @@ def cidades_alertadas_pa(**kwargs):
     consulta_sql = 'SELECT * FROM eaf_tvro.cidades_alertadas_pa'
     resultado = session.execute(text(consulta_sql))
     cidades_alertadas_pa = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
-    # if len(cidades_alertadas_pa) > 0:
-    for _, row in df_final.iterrows():
-        # ibge = row['IBGE']
-        # calculo_prevencao = row['calculo_prevencao']
-        # if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevencao'] == calculo_prevencao)).any():
-        #     pass
-        # else:          
-        ibge = row['ibge']
-        nome_cidade =encao = row['calculo_prevencao']
-        nivel_alerta = row['nivel_calculo_prevencao']
-        data_alerta = date.today().strftime('%d-%m-%Y')
-        insere_informacao = f"INSERT INTO eaf_tvro.cidades_alertadas_pa (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ('{ibge}', '{nome_cidade}', '{calculo_prevencao}', {nivel_alerta}, '{data_alerta}')"
-        print('VALORES:')
-        print(insere_informacao)
-        cursor.execute(insere_informacao)
-        cursor.commit()
-        ibge = row['ibge']
-        regiao = row['regiao']
-        uf = row['uf'] 
-        row['nome_cidade']
-        fase = row['fase_x']
-        nome_cidade = row['nome_cidade']
-        agendados_semana_anterior = row['new_agendados_semana_anterior']
-        agendados_semana_atual = row['new_agendados_semana_atual']
-        variacao_agendamentos_semana = row['variacao_agendamentos_semana']
-        risco_semana_anterior = row['porcentagem_de_risco_semana_anterior']
-        risco_semana_atual = row['porcentagem_de_risco_semana_atual']
-        curva = row['curva']
-        calculo_prevencao = row['calculo_prevencao']
-        insere_informacao = f"INSERT INTO eaf_tvro.disparo_alerta_pa (IBGE, Região, UF, [Município], Fase, Curva, [Agendamentos Semana Anterior], [Agendamentos Semana Atual], [% Variação Agendamentos Semana], [% Risco Semana Anterior], [% Risco Semana Atual], [Cor do alerta]) VALUES ('{ibge}', '{regiao}', '{uf}', '{nome_cidade}', '{fase}', '{curva}', {agendados_semana_anterior}, {agendados_semana_atual}, {variacao_agendamentos_semana}, {risco_semana_anterior}, {risco_semana_atual}, '{calculo_prevencao}')"
-        cursor.execute(insere_informacao)
-        cursor.commit()
+    quantidade = 0
+    if len(cidades_alertadas_pa) > 0:
+        for _, row in df_final.iterrows():
+            ibge = row['ibge']
+            calculo_prevencao = row['calculo_prevencao']
+            if((cidades_alertadas_pa['ibge'] == ibge) & (cidades_alertadas_pa['calculo_prevencao'] == calculo_prevencao)).any():
+                pass
+            else:          
+                ibge = row['ibge']
+                nome_cidade = row['nome_cidade']
+                nivel_alerta = row['nivel_calculo_prevencao']
+                data_alerta = date.today().strftime('%d-%m-%Y')
+                insere_informacao = f"INSERT INTO eaf_tvro.cidades_alertadas_pa (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ('{ibge}', '{nome_cidade}', '{calculo_prevencao}', {nivel_alerta}, '{data_alerta}')"
+                print('VALORES:')
+                print(insere_informacao)
+                cursor.execute(insere_informacao)
+                cursor.commit()
+                ibge = row['ibge']
+                regiao = row['regiao']
+                uf = row['uf'] 
+                row['nome_cidade']
+                fase = row['fase']
+                nome_cidade = row['nome_cidade']
+                agendados_semana_anterior = row['new_agendados_semana_anterior']
+                agendados_semana_atual = row['new_agendados_semana_atual']
+                variacao_agendamentos_semana = row['variacao_agendamentos_semana']
+                risco_semana_anterior = row['porcentagem_de_risco_semana_anterior']
+                risco_semana_atual = row['porcentagem_de_risco_semana_atual']
+                curva = row['curva']
+                calculo_prevencao = row['calculo_prevencao']
+                insere_informacao = f"INSERT INTO eaf_tvro.disparo_alerta_pa (IBGE, Região, UF, [Município], Fase, Curva, [Agendamentos Semana Anterior], [Agendamentos Semana Atual], [% Variação Agendamentos Semana], [% Risco Semana Anterior], [% Risco Semana Atual], [Cor do alerta]) VALUES ('{ibge}', '{regiao}', '{uf}', '{nome_cidade}', '{fase}', '{curva}', {agendados_semana_anterior}, {agendados_semana_atual}, {variacao_agendamentos_semana}, {risco_semana_anterior}, {risco_semana_atual}, '{calculo_prevencao}')"
+                cursor.execute(insere_informacao)
+                cursor.commit()
+                quantidade += 1
+        
+    else:
+        for _, row in df_final.iterrows():
+            ibge = row['ibge']
+            calculo_prevencao = row['calculo_prevencao']
+            ibge = row['ibge']
+            nome_cidade = row['nome_cidade']
+            nivel_alerta = row['nivel_calculo_prevencao']
+            data_alerta = date.today().strftime('%d-%m-%Y')
+            insere_informacao = f"INSERT INTO eaf_tvro.cidades_alertadas_pa (ibge, nome_cidade, calculo_prevencao, nivel_alerta, data_alerta) VALUES ('{ibge}', '{nome_cidade}', '{calculo_prevencao}', {nivel_alerta}, '{data_alerta}')"
+            print('VALORES:')
+            print(insere_informacao)
+            cursor.execute(insere_informacao)
+            cursor.commit()
+            ibge = row['ibge']
+            regiao = row['regiao']
+            uf = row['uf'] 
+            row['nome_cidade']
+            fase = row['fase']
+            nome_cidade = row['nome_cidade']
+            agendados_semana_anterior = row['new_agendados_semana_anterior']
+            agendados_semana_atual = row['new_agendados_semana_atual']
+            variacao_agendamentos_semana = row['variacao_agendamentos_semana']
+            risco_semana_anterior = row['porcentagem_de_risco_semana_anterior']
+            risco_semana_atual = row['porcentagem_de_risco_semana_atual']
+            curva = row['curva']
+            calculo_prevencao = row['calculo_prevencao']
+            insere_informacao = f"INSERT INTO eaf_tvro.disparo_alerta_pa (IBGE, Região, UF, [Município], Fase, Curva, [Agendamentos Semana Anterior], [Agendamentos Semana Atual], [% Variação Agendamentos Semana], [% Risco Semana Anterior], [% Risco Semana Atual], [Cor do alerta]) VALUES ('{ibge}', '{regiao}', '{uf}', '{nome_cidade}', '{fase}', '{curva}', {agendados_semana_anterior}, {agendados_semana_atual}, {variacao_agendamentos_semana}, {risco_semana_anterior}, {risco_semana_atual}, '{calculo_prevencao}')"
+            cursor.execute(insere_informacao)
+            cursor.commit()
+            quantidade += 1
 
     cursor.close()
     print('DEU CERTO!!!')
+    print('VALOR DE QUANTIDADE EH:', quantidade)
+    return quantidade
 
-def envia_info_power_automate():
+def envia_info_power_automate(**kwargs):
 
     import pandas as pd
     from airflow.models import Variable
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy import create_engine, text
-
+    ti = kwargs[ti]
+    quantidade = ti.xcom_pull(task_ids='cidades_alertadas_pa')
+    print('VALOR DE QUANTIDADE EH:', quantidade)
     server = Variable.get('DBSERVER')
     database = Variable.get('DATABASE')
     username = Variable.get('DBUSER')
     password = Variable.get('DBPASSWORD')
-
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
-
     Session = sessionmaker(bind=engine)
     session = Session()
-
     consulta_sql = '''
     SELECT 
         *
@@ -546,8 +579,7 @@ def envia_info_power_automate():
     '''
     resultado = session.execute(text(consulta_sql))
     disparo_alerta_pa = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
-
-    df_power_automate = pd.DataFrame({'dataHora_disparo': [(datetime.now() - timedelta(hours=3))], 'qtd_cidades': [len(disparo_alerta_pa)]})
+    df_power_automate = pd.DataFrame({'dataHora_disparo': [(datetime.now() - timedelta(hours=3))], 'qtd_cidades': [quantidade]})
     df_power_automate.to_sql("power_automate", engine, if_exists='append', schema='eaf_tvro', index=False)
 
 default_args = {
