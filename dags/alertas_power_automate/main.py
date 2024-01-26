@@ -590,7 +590,7 @@ default_args = {
 dag = DAG(
     'alertas_power_automate',
     default_args=default_args,
-    schedule_interval='20 11 * * *',
+    schedule_interval='20 10 * * *',
     catchup=False
 )
 
