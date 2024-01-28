@@ -472,6 +472,8 @@ def cidades_alertadas_pa(**kwargs):
     password = 'etzAf*!Hk4WX'
     conn = pyodbc.connect(f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
     cursor = conn.cursor()
+    cursor.execute('DELETE [eaf_tvro].[power_automate]')
+    cursor.commit()
     ti = kwargs['ti']
     df_final = ti.xcom_pull(task_ids='cria_colunas_calculadas')
     server = Variable.get('DBSERVER')
