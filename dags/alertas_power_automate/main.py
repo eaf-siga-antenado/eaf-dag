@@ -319,7 +319,7 @@ def new_agendados_semana_atual():
 
 # cálculo variação de agendamentos
 def calcular_variacao_agendamentos(row):
-    if (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) > 20:
+    if (row['new_agendados_semana_atual'] - row['new_agendados_semana_anterior']) > 50:
         if row['new_agendados_semana_anterior'] == 0:
             return 1
         else:
@@ -328,11 +328,11 @@ def calcular_variacao_agendamentos(row):
         return 0
 
 def cria_coluna_curva(value):
-    if value > 9:
+    if value >= 9:
         return 'Long Tail'
-    elif value > 2:
+    elif value >= 3:
         return 'Decrescente'
-    elif value > 0:
+    elif value >= 0:
         return 'Crescente'
     return None
 
@@ -453,7 +453,8 @@ def cria_colunas_calculadas(**kwargs):
     df_final['nivel_calculo_prevencao'] = df_final.apply(nivel_prevencao_funcao, axis=1)
     
     # filtrando informações que serão alertadas
-    df_final = df_final[((df_final['calculo_prevencao'] == 'Comunicado - Verde') & (df_final['curva'] !='Crescente')) | (df_final['nivel_calculo_prevencao'] >= 2)]
+    # df_final = df_final[((df_final['calculo_prevencao'] == 'Comunicado - Verde') & (df_final['curva'] !='Crescente')) | (df_final['nivel_calculo_prevencao'] >= 2)]
+    df_final = df_final[df_final['nivel_calculo_prevencao'] >= 2]
     print('tamanho do df_final', len(df_final))
     print('as colunas que temos são as seguintes:')
     print(df_final.columns)
