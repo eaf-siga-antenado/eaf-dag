@@ -134,7 +134,7 @@ def extrair_dados_api():
     headers = {'Authorization': f'Bearer {jwt_token["access_token"]}'}
     url_recursos_protegidos = 'https://api-eaf-extrator-genesys.datametrica.com.br/chamadas'
     response_recursos = requests.post(url_recursos_protegidos, headers=headers, json=params)
-    numero_paginas = response_recursos.json()['totalPages']
+    num_paginas = response_recursos.json()['totalPaginas']
 
     final = pd.DataFrame()
 
@@ -146,7 +146,7 @@ def extrair_dados_api():
         return df
 
     with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
-        dfs = executor.map(fetch_data, range(1, numero_paginas+1))
+        dfs = executor.map(fetch_data, range(1, num_paginas+1))
 
     final = pd.concat(list(dfs), ignore_index=True)
     
@@ -157,19 +157,143 @@ def quantidade_registros(**kwargs):
     df_api = ti.xcom_pull(task_ids='extrair_dados_api')
     if len(df_api) == 0:
         return 'mensagem_sem_info'
-    return 'envio_banco_dados'
+    return 'tratamento_de_dados'
+
+def tratamento_de_dados(**kwargs):
+
+    def parse_datetime(value):
+        try:
+            if pd.notna(value):
+                cleaned_value = value.replace('T', ' ')
+                return pd.to_datetime(cleaned_value)
+            else:
+                return pd.NaT
+        except:
+            return pd.NaT
+        
+    ti = kwargs['ti']
+    final = ti.xcom_pull(task_ids='extrair_dados_api')
+
+    # convertendo colunas de datas
+    final['dataHoraInicio'] = final['dataHoraInicio'].apply(parse_datetime)
+    final['dataHoraFim'] = final['dataHoraFim'].apply(parse_datetime)
+    final['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
+
+    # tratamento para a coluna atendimento
+    for index, row in final.iterrows():
+        try:
+            tipo = []
+            tempoEspera = []
+            tempoAtendimento = []
+            atendidaAte60Seg = []
+            desistenciaAte60Seg = []
+            atendidaPos60Seg = []
+            desistenciaPos60Seg = []
+
+            for _, i in pd.DataFrame(row['atendimento']).iterrows():
+                tipo.append(i['tipo'])
+                tempoEspera.append(i['tempoEspera'])
+                tempoAtendimento.append(i['tempoAtendimento'])
+                atendidaAte60Seg.append(i['atendidaAte60Seg'])
+                desistenciaAte60Seg.append(i['desistenciaAte60Seg'])
+                atendidaPos60Seg.append(i['atendidaPos60Seg'])
+                desistenciaPos60Seg.append(i['desistenciaPos60Seg'])
+
+            # Atribuir os valores para a linha específica do DataFrame
+            final.at[index, 'tipo'] = str(tipo)
+            final.at[index, 'tempoEspera'] = str(tempoEspera)
+            final.at[index, 'tempoAtendimento'] = str(tempoAtendimento)
+            final.at[index, 'atendidaAte60Seg'] = str(atendidaAte60Seg)
+            final.at[index, 'desistenciaAte60Seg'] = str(desistenciaAte60Seg)
+            final.at[index, 'atendidaPos60Seg'] = str(atendidaPos60Seg)
+            final.at[index, 'desistenciaPos60Seg'] = str(desistenciaPos60Seg)
+
+        except:
+            # Se ocorrer uma exceção, atribuir None para as colunas
+            final.at[index, 'tipo'] = None
+            final.at[index, 'tempoEspera'] = None
+            final.at[index, 'tempoAtendimento'] = None
+            final.at[index, 'atendidaAte60Seg'] = None
+            final.at[index, 'desistenciaAte60Seg'] = None
+            final.at[index, 'atendidaPos60Seg'] = None
+            final.at[index, 'desistenciaPos60Seg'] = None
+
+    # tratamento para a coluna interlocutor
+    for index, row in final.iterrows():
+        try:
+            origem = []
+            cadastroLocalizadoEAF = []
+            uf = []
+            ddd = []
+            codigoCidadeIBGE = []
+            cpf = []
+            cep = []
+            telefone = []
+
+            for _, i in pd.DataFrame([row['interlocutor']]).iterrows():
+                origem.append(i['origem'])
+                cadastroLocalizadoEAF.append(i['cadastroLocalizadoEAF'])
+                uf.append(i['uf'])
+                ddd.append(i['ddd'])
+                codigoCidadeIBGE.append(i['codigoCidadeIBGE'])
+                cpf.append(i['codigoCidadeIBGE'])
+                cep.append(i['cep'])
+                telefone.append(i['telefone'])
+
+            # Atribuir os valores para a linha específica do DataFrame
+            final.at[index, 'origem'] = str(origem)
+            final.at[index, 'cadastroLocalizadoEAF'] = str(cadastroLocalizadoEAF)
+            final.at[index, 'uf'] = str(uf)
+            final.at[index, 'ddd'] = str(ddd)
+            final.at[index, 'codigoCidadeIBGE'] = str(codigoCidadeIBGE)
+            final.at[index, 'cpf'] = str(cpf)
+            final.at[index, 'cep'] = str(cep)
+            final.at[index, 'telefone'] = str(telefone)
+
+        except:
+            # Se ocorrer uma exceção, atribuir None para as colunas
+            final.at[index, 'origem'] = None
+            final.at[index, 'cadastroLocalizadoEAF'] = None
+            final.at[index, 'uf'] = None
+            final.at[index, 'ddd'] = None
+            final.at[index, 'codigoCidadeIBGE'] = None
+            final.at[index, 'cpf'] = None
+            final.at[index, 'cep'] = None
+            final.at[index, 'telefone'] = None
+    final.drop(columns=['atendimento', 'interlocutor', 'csv'], inplace=True)
+
+    def remove_colchetes(valor):
+        return valor.replace('[', '').replace(']', '').replace("'", "")
+
+    # Aplicar a função a todos os elementos do DataFrame
+    final['tipo'] = final['tipo'].apply(remove_colchetes)
+    final['tempoEspera'] = final['tempoEspera'].apply(remove_colchetes)
+    final['tempoAtendimento'] = final['tempoAtendimento'].apply(remove_colchetes)
+    final['atendidaAte60Seg'] = final['atendidaAte60Seg'].apply(remove_colchetes)
+    final['desistenciaAte60Seg'] = final['desistenciaAte60Seg'].apply(remove_colchetes)
+    final['atendidaPos60Seg'] = final['atendidaPos60Seg'].apply(remove_colchetes)
+    final['desistenciaPos60Seg'] = final['desistenciaPos60Seg'].apply(remove_colchetes)
+    final['origem'] = final['origem'].apply(remove_colchetes)
+    final['cadastroLocalizadoEAF'] = final['cadastroLocalizadoEAF'].apply(remove_colchetes)
+    final['uf'] = final['uf'].apply(remove_colchetes)
+    final['ddd'] = final['ddd'].apply(remove_colchetes)
+    final['codigoCidadeIBGE'] = final['codigoCidadeIBGE'].apply(remove_colchetes)
+    final['cpf'] = final['cpf'].apply(remove_colchetes)
+    final['cep'] = final['cep'].apply(remove_colchetes)
+    final['telefone'] = final['telefone'].apply(remove_colchetes)
+    return final
 
 def envio_banco_dados(**kwargs):
 
     ti = kwargs['ti']
-    output = ti.xcom_pull(task_ids='extrair_dados_api')
-    output.drop(columns=['id', 'hash', 'csv', 'midia'], axis=1, inplace=True)
+    output = ti.xcom_pull(task_ids='tratamento_de_dados')
+    # output.drop(columns=['id', 'hash', 'csv', 'midia'], axis=1, inplace=True)
     server = Variable.get('DBSERVER')
     database = Variable.get('DATABASE')
     username = Variable.get('DBUSER')
     password = Variable.get('DBPASSWORD')
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
-    output['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
+    # output['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
     output.to_sql("ura_datametrica", engine, if_exists='append', schema='eaf_tvro', index=False)
 
 default_args = {
@@ -203,6 +327,12 @@ quantidade_registros = BranchPythonOperator(
 envio_banco_dados = PythonOperator(
     task_id='envio_banco_dados',
     python_callable=envio_banco_dados,
+    dag=dag
+) 
+
+tratamento_de_dados = PythonOperator(
+    task_id='tratamento_de_dados',
+    python_callable=tratamento_de_dados,
     dag=dag
 ) 
 
@@ -243,5 +373,5 @@ nao_faz_nada = DummyOperator(
 
 verifica_data_banco >> [status_api, nao_faz_nada] 
 status_api >> [extrair_dados_api, mensagem_api_fora_do_ar] 
-extrair_dados_api >> quantidade_registros >> [mensagem_sem_info, envio_banco_dados]  
-envio_banco_dados >> mensagem_com_info
+extrair_dados_api >> quantidade_registros >> [mensagem_sem_info, tratamento_de_dados]  
+tratamento_de_dados >> envio_banco_dados >> mensagem_com_info
