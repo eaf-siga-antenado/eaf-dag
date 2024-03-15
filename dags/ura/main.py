@@ -297,9 +297,9 @@ def envio_banco_dados(**kwargs):
     output.to_sql("ura_datametrica", engine, if_exists='append', schema='eaf_tvro', index=False)
 
 default_args = {
-    'start_date': datetime(2023, 8, 1, 6, 0, 0),
-    'retries': 2,
-    'retry_delay': timedelta(minutes=5)
+    'start_date': datetime(2023, 8, 1, 6, 0, 0)
+    # 'retries': 2,
+    # 'retry_delay': timedelta(minutes=5)
 }
 
 dag = DAG(
