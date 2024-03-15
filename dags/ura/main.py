@@ -23,7 +23,7 @@ def verifica_data_banco():
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    consulta_sql = 'SELECT MAX(CAST(dataHora AS DATE)) data FROM eaf_tvro.ura_datametrica'
+    consulta_sql = 'SELECT MAX(CAST(dataHoraInicio AS DATE)) data FROM eaf_tvro.ura_datametrica'
     resultado = session.execute(text(consulta_sql))
     data_maxima = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
 
