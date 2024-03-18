@@ -205,7 +205,7 @@ def cadunico():
     consulta_sql = '''
     SELECT 
         CAST(ibge AS varchar) ibge,
-        familias qtd_cadunico
+        [CODIGO FAMILIAR] qtd_cadunico
     FROM [eaf_tvro].[cadunico]
     '''
     resultado = session.execute(text(consulta_sql))
