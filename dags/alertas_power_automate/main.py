@@ -467,20 +467,19 @@ def cidades_alertadas_pa(**kwargs):
     from airflow.models import Variable
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy import create_engine, text
-    server = 'sqlserver-eaf.database.windows.net'
-    database = 'database-middleware'
-    username = 'eaf_svc'
-    password = 'etzAf*!Hk4WX'
+
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+
     conn = pyodbc.connect(f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
     cursor = conn.cursor()
     cursor.execute('DELETE [eaf_tvro].[disparo_alerta_pa]')
     cursor.commit()
     ti = kwargs['ti']
     df_final = ti.xcom_pull(task_ids='cria_colunas_calculadas')
-    server = Variable.get('DBSERVER')
-    database = Variable.get('DATABASE')
-    username = Variable.get('DBUSER')
-    password = Variable.get('DBPASSWORD')
+  
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
     Session = sessionmaker(bind=engine)
     session = Session()
