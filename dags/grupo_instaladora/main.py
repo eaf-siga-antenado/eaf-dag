@@ -53,6 +53,7 @@ def extrair_dados_api():
     df_groups['instaladora'] = df_groups['name'].apply(extrair_instaladora)
     df_groups.drop(columns='name', inplace=True)
     df_groups['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
+    df_groups['id'] = df_groups['id'].astype(str)
     
     server = Variable.get('DBSERVER')
     database = Variable.get('DATABASE')
