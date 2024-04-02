@@ -49,35 +49,10 @@ def mensagem_api_fora_do_ar():
     requests.get(url).json()
 
 def mensagem_sem_info():
-
-    TOKEN = Variable.get("TELEGRAM_DAILY_STATUS_TOKEN")
-    chat_id = Variable.get("TELEGRAM_DAILY_STATUS_ID")
-
-    data_anterior = (datetime.now() - timedelta(days=1)).strftime('%d-%m-%Y')
-
-    message = f"EAF-TVRO - URA Datametrica: \n\n Não foi possível atualizar a tabela ura_datametrica, pois não temos informações para o dia {data_anterior}."
-
-    print(message)
-
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
-    requests.get(url).json()
+    pass
 
 def mensagem_com_info(**kwargs):
-
-    TOKEN = Variable.get("TELEGRAM_DAILY_STATUS_TOKEN")
-    chat_id = Variable.get("TELEGRAM_DAILY_STATUS_ID")
-
-    ti = kwargs['ti']
-    df_api = ti.xcom_pull(task_ids='extrair_dados_api')
-
-    data_anterior = (datetime.now() - timedelta(days=1)).strftime('%d-%m-%Y')
-
-    message = f"EAF-TVRO - URA Datametrica: \n\n Tabela atualizada com sucesso, foram inseridos {len(df_api)} novos registros referente à data {data_anterior}."
-
-    print(message)
-
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
-    requests.get(url).json()
+    pass
 
 def parse_datetime(value):
     try:
@@ -149,12 +124,14 @@ def extrair_dados_api():
         dfs = executor.map(fetch_data, range(1, num_paginas+1))
 
     final = pd.concat(list(dfs), ignore_index=True)
+    print('QUANTIDADE DE INFORMAÇÕES:', len(final))
     
     return final
 
 def quantidade_registros(**kwargs):
     ti = kwargs['ti']
     df_api = ti.xcom_pull(task_ids='extrair_dados_api')
+    print('QUANTIDADE DE INFORMAÇÕES:', len(df_api))
     if len(df_api) == 0:
         return 'mensagem_sem_info'
     return 'tratamento_de_dados'
