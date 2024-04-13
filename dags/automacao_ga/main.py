@@ -110,6 +110,9 @@ def extrair_dados_ga():
         dados_antigos['date'] = pd.to_datetime(dados_antigos['date']).dt.date
         df_antigo = pd.concat([dados_antigos, df_antigo], ignore_index=True)
 
+    print('antigo foi:')
+    print(df_antigo.head())        
+
     inicio_data_nova = date(2023, 7, 17)
     final_data_nova = date.today() - timedelta(days=1)
 
@@ -124,7 +127,14 @@ def extrair_dados_ga():
         print(i)
     df_novo.rename({'customEvent:event_label': 'eventName'}, axis=1, inplace=True)
 
+    print('novo foi:')
+    print(df_novo.head())  
+
     output = pd.concat([df_antigo, df_novo], ignore_index=True)
+
+    print('concatenação deu certo:')
+    print(output.head())
+
     output.reset_index(inplace=True)
     output['date'] = pd.to_datetime(output['date']).dt.date
     output.rename({'customEvent:event_label': 'eventName'}, axis=1, inplace=True)
