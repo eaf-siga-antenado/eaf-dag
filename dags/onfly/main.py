@@ -37,9 +37,6 @@ def colaboradores(**kwargs):
     total_paginas_colaboradores = resposta_colaboradores.json()['meta']['pagination']['total_pages']
     print('total_paginas_colaboradores', total_paginas_colaboradores)
     df_colaboradores = pd.DataFrame() 
-    url_colaboradores = 'https://api.onfly.com.br/employees?include=document'
-    resposta_colaboradores = requests.request('GET',url_colaboradores, headers=headers, params=params)
-    total_paginas_colaboradores = resposta_colaboradores.json()['meta']['pagination']['total_pages']
     dados_pagina = resposta_colaboradores.json()['data']
     for i in range(1, total_paginas_colaboradores+1):
         headers = {'Authorization': access_token}
