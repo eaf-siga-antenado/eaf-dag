@@ -16,6 +16,19 @@ def seleciona_infos_autenticacao():
     client_secret_onfly = Variable.get("client_secret_onfly")
     print(client_id_onfly)
     print(client_secret_onfly)
+    parametro = {
+        'grant_type': 'client_credentials',
+        'scope': "*",
+        'client_id': client_id_onfly,
+        'client_secret': client_secret_onfly,
+    }
+    return parametro
+
+def seleciona_parametro(**kwargs):
+    ti = kwargs['ti']
+    teste = ti.xcom_pull(task_ids='seleciona_infos_autenticacao')
+    print(teste)
+    print('deu certo!')
 
 def verifica_data_banco():
     server = Variable.get('DBSERVER')
@@ -301,4 +314,10 @@ seleciona_infos_autenticacao = PythonOperator(
     dag=dag
 )
 
-seleciona_infos_autenticacao
+seleciona_parametro = PythonOperator(
+    task_id='seleciona_parametro',
+    python_callable=seleciona_parametro,
+    dag=dag
+)
+
+seleciona_infos_autenticacao >> seleciona_parametro
