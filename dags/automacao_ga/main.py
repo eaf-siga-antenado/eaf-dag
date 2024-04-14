@@ -100,8 +100,8 @@ def extrair_dados_ga():
         date_ranges=[DateRange(start_date=data_ref, end_date=data_ref)],)
         return request
     
-    inicio_data_antiga = date(2022, 6, 5)
-    # inicio_data_antiga = date(2023, 7, 5)
+    # inicio_data_antiga = date(2022, 6, 5)
+    inicio_data_antiga = date(2023, 7, 5)
     final_data_antiga = date(2023, 7, 16)
     lista_de_datas_antigas = [inicio_data_antiga + timedelta(days=i) for i in range((final_data_antiga - inicio_data_antiga).days + 1)]
 
@@ -115,8 +115,8 @@ def extrair_dados_ga():
     print('antigo foi:')
     print(df_antigo.head())        
 
-    inicio_data_nova = date(2023, 7, 17)
-    # inicio_data_nova = date(2024, 4, 5)
+    # inicio_data_nova = date(2023, 7, 17)
+    inicio_data_nova = date(2024, 4, 5)
     final_data_nova = date.today() - timedelta(days=1)
 
     lista_de_datas_novas = [inicio_data_nova + timedelta(days=i) for i in range((final_data_nova - inicio_data_nova).days + 1)]
