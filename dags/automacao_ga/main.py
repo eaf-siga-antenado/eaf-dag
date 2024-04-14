@@ -124,7 +124,6 @@ def extrair_dados_ga():
         dados_novos.reset_index(inplace=True)
         dados_novos['date'] = pd.to_datetime(dados_novos['date']).dt.date
         df_novo = pd.concat([dados_novos, df_novo], ignore_index=True)
-        print(i)
     df_novo.rename({'customEvent:event_label': 'eventName'}, axis=1, inplace=True)
 
     print('novo foi:')
@@ -137,7 +136,7 @@ def extrair_dados_ga():
 
     output.reset_index(inplace=True)
     output['date'] = pd.to_datetime(output['date']).dt.date
-    output.rename({'customEvent:event_label': 'eventName'}, axis=1, inplace=True)
+    # output.rename({'customEvent:event_label': 'eventName'}, axis=1, inplace=True)
     output['city'] = output['city'].str.lower()
     return output
 
