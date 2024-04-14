@@ -29,13 +29,13 @@ def token_acesso():
 def colaboradores(**kwargs):
     ti = kwargs['ti']
     access_token = ti.xcom_pull(task_ids='token_acesso')
-    headers = {'Authorization': access_token}
+    print(access_token)
+    headers = {'Authorization': f'Bearer {access_token}'}
     params = {'page':1}
     url_colaboradores = 'https://api.onfly.com.br/employees?include=document'
     resposta_colaboradores = requests.get(url_colaboradores, headers=headers, params=params)
-    print(resposta_colaboradores.json())
     total_paginas_colaboradores = resposta_colaboradores.json()['meta']['pagination']['total_pages']
-
+    print('total_paginas_colaboradores', total_paginas_colaboradores)
     df_colaboradores = pd.DataFrame() 
     url_colaboradores = 'https://api.onfly.com.br/employees?include=document'
     resposta_colaboradores = requests.request('GET',url_colaboradores, headers=headers, params=params)
