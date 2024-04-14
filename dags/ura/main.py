@@ -150,6 +150,8 @@ def tratamento_de_dados(**kwargs):
         
     ti = kwargs['ti']
     final = ti.xcom_pull(task_ids='extrair_dados_api')
+    print('os dados chegaram aqui:', len(final))
+    print(final.head())
 
     # convertendo colunas de datas
     final['dataHoraInicio'] = final['dataHoraInicio'].apply(parse_datetime)
@@ -240,6 +242,8 @@ def tratamento_de_dados(**kwargs):
     final.drop(columns=['atendimento', 'interlocutor', 'csv'], inplace=True)
 
     def remove_colchetes(valor):
+        if valor == None:
+            return valor
         return valor.replace('[', '').replace(']', '').replace("'", "")
 
     # Aplicar a função a todos os elementos do DataFrame
