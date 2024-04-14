@@ -36,8 +36,6 @@ def colaboradores(**kwargs):
     total_paginas_colaboradores = resposta_colaboradores.json()['meta']['pagination']['total_pages']
 
     df_colaboradores = pd.DataFrame() 
-    params = {'page':1}
-    headers = {'Authorization': access_token}
     url_colaboradores = 'https://api.onfly.com.br/employees?include=document'
     resposta_colaboradores = requests.request('GET',url_colaboradores, headers=headers, params=params)
     total_paginas_colaboradores = resposta_colaboradores.json()['meta']['pagination']['total_pages']
@@ -51,8 +49,29 @@ def colaboradores(**kwargs):
         df_pagina = pd.DataFrame(dados_pagina)
         df_colaboradores = pd.concat([df_colaboradores, df_pagina], ignore_index=True)
 
-    print(len(df_colaboradores))
-    print(df_colaboradores.head())
+    return colaboradores
+
+def centro_custo(**kwargs):
+    ti = kwargs['ti']
+    access_token = ti.xcom_pull(task_ids='token_acesso')
+    headers = {'Authorization': access_token}
+    params = {'page':1}
+    df_centro_custo = pd.DataFrame()
+    headers = {'Authorization': access_token}
+    url_centrocusto ='https://api.onfly.com.br/settings/cost-center'
+    resposta_centrocusto = requests.request('GET',url_centrocusto, headers=headers)
+    total_paginas_centrocusto = resposta_centrocusto.json()['meta']['pagination']['total_pages']
+    for i in range(1, total_paginas_centrocusto+1):
+        params['page'] = i
+        url_centrocusto = f'https://api.onfly.com.br/settings/cost-center'
+        resposta = requests.request('GET', url_centrocusto, headers=headers, params=params)
+        dados_pagina = resposta.json()['data']
+        df_pagina = pd.DataFrame(dados_pagina)
+        df_centro_custo = pd.concat([df_centro_custo, df_pagina], ignore_index=True)
+    print('QUANTIDADE DE INFORMAÇÕES NO CENTRO DE CUSTO:')
+    print(len(df_centro_custo))
+    df_centro_custo.head()
+
 
 def verifica_data_banco():
     server = Variable.get('DBSERVER')
@@ -344,4 +363,10 @@ colaboradores = PythonOperator(
     dag=dag
 )
 
-token_acesso >> colaboradores
+centro_custo = PythonOperator(
+    task_id='centro_custo',
+    python_callable=centro_custo,
+    dag=dag
+)
+
+token_acesso >> colaboradores >> centro_custo
