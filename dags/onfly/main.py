@@ -32,8 +32,10 @@ def colaboradores(**kwargs):
     print(access_token)
     headers = {'Authorization': f'Bearer {access_token}'}
     params = {'page':1}
-    url_colaboradores = 'https://api.onfly.com.br/employees?include=document'
-    resposta_colaboradores = requests.get(url_colaboradores, headers=headers, params=params)
+    resposta_colaboradores = requests.get('https://api.onfly.com.br/employees?include=document', headers=headers, params=params)
+    print('status code', resposta_colaboradores.status_code)
+    print('conteúdo do resultado:')
+    print(resposta_colaboradores.json())
     total_paginas_colaboradores = resposta_colaboradores.json()['meta']['pagination']['total_pages']
     print('total_paginas_colaboradores', total_paginas_colaboradores)
     df_colaboradores = pd.DataFrame() 
