@@ -14,8 +14,6 @@ from airflow.operators.python_operator import PythonOperator
 def token_acesso():
     client_id_onfly = Variable.get("client_id_onfly")
     client_secret_onfly = Variable.get("client_secret_onfly")
-    print(client_id_onfly)
-    print(client_secret_onfly)
     parametro = {
         'grant_type': 'client_credentials',
         'scope': "*",
@@ -26,14 +24,35 @@ def token_acesso():
     url = requests.post('https://api.onfly.com.br/oauth/token',data = parametro)
     dados = url.json()
     access_token = dados.get('access_token')
-
     return access_token
 
-def seleciona_parametro(**kwargs):
+def colaboradores(**kwargs):
     ti = kwargs['ti']
-    teste = ti.xcom_pull(task_ids='token_acesso')
-    print(teste)
-    print('deu certo!')
+    access_token = ti.xcom_pull(task_ids='token_acesso')
+    headers = {'Authorization': access_token}
+    params = {'page':1}
+    url_colaboradores = 'https://api.onfly.com.br/employees?include=document'
+    resposta_colaboradores = requests.get(url_colaboradores, headers=headers, params=params)
+    total_paginas_colaboradores = resposta_colaboradores.json()['meta']['pagination']['total_pages']
+
+    df_colaboradores = pd.DataFrame() 
+    params = {'page':1}
+    headers = {'Authorization': access_token}
+    url_colaboradores = 'https://api.onfly.com.br/employees?include=document'
+    resposta_colaboradores = requests.request('GET',url_colaboradores, headers=headers, params=params)
+    total_paginas_colaboradores = resposta_colaboradores.json()['meta']['pagination']['total_pages']
+    dados_pagina = resposta_colaboradores.json()['data']
+    for i in range(1, total_paginas_colaboradores+1):
+        headers = {'Authorization': access_token}
+        params['page'] = i
+        url_colaboradores = f'https://api.onfly.com.br/employees?include=document'
+        resposta = requests.request('GET', url_colaboradores, headers=headers, params=params)
+        dados_pagina = resposta.json()['data']
+        df_pagina = pd.DataFrame(dados_pagina)
+        df_colaboradores = pd.concat([df_colaboradores, df_pagina], ignore_index=True)
+
+    print(len(df_colaboradores))
+    print(df_colaboradores.head())
 
 def verifica_data_banco():
     server = Variable.get('DBSERVER')
@@ -319,10 +338,10 @@ token_acesso = PythonOperator(
     dag=dag
 )
 
-seleciona_parametro = PythonOperator(
-    task_id='seleciona_parametro',
-    python_callable=seleciona_parametro,
+colaboradores = PythonOperator(
+    task_id='colaboradores',
+    python_callable=colaboradores,
     dag=dag
 )
 
-token_acesso >> seleciona_parametro
+token_acesso >> colaboradores
