@@ -99,7 +99,8 @@ def extrair_dados_ga():
         date_ranges=[DateRange(start_date=data_ref, end_date=data_ref)],)
         return request
     
-    inicio_data_antiga = date(2022, 6, 5)
+    # inicio_data_antiga = date(2022, 6, 5)
+    inicio_data_antiga = date(2023, 7, 5)
     final_data_antiga = date(2023, 7, 16)
     lista_de_datas_antigas = [inicio_data_antiga + timedelta(days=i) for i in range((final_data_antiga - inicio_data_antiga).days + 1)]
 
@@ -113,7 +114,8 @@ def extrair_dados_ga():
     print('antigo foi:')
     print(df_antigo.head())        
 
-    inicio_data_nova = date(2023, 7, 17)
+    # inicio_data_nova = date(2023, 7, 17)
+    inicio_data_nova = date(2024, 4, 5)
     final_data_nova = date.today() - timedelta(days=1)
 
     lista_de_datas_novas = [inicio_data_nova + timedelta(days=i) for i in range((final_data_nova - inicio_data_nova).days + 1)]
@@ -141,7 +143,7 @@ def extrair_dados_ga():
     return output
 
 def envio_banco_dados(**kwargs):
-
+    print('começou aqui')
     ti = kwargs['ti']
     output = ti.xcom_pull(task_ids='extrair_dados')
     ibge = ti.xcom_pull(task_ids='extrair_ibge_banco')
@@ -152,6 +154,7 @@ def envio_banco_dados(**kwargs):
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
 
     subir = output.merge(ibge, left_on='city', right_on='nome_cidade', how='left')
+    print('merge deu certo')
     subir['ibge'] = subir['ibge'].astype(pd.Int64Dtype())
     subir['eventCount'] = subir['eventCount'].astype(pd.Int64Dtype())
     subir.drop(columns='city', inplace=True, axis=1)
