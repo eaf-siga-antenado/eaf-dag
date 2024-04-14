@@ -11,7 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, text
 from airflow.operators.python_operator import PythonOperator
 
-def seleciona_infos_autenticacao():
+def token_acesso():
     client_id_onfly = Variable.get("client_id_onfly")
     client_secret_onfly = Variable.get("client_secret_onfly")
     print(client_id_onfly)
@@ -22,11 +22,16 @@ def seleciona_infos_autenticacao():
         'client_id': client_id_onfly,
         'client_secret': client_secret_onfly,
     }
-    return parametro
+
+    url = requests.post('https://api.onfly.com.br/oauth/token',data = parametro)
+    dados = url.json()
+    access_token = dados.get('access_token')
+
+    return access_token
 
 def seleciona_parametro(**kwargs):
     ti = kwargs['ti']
-    teste = ti.xcom_pull(task_ids='seleciona_infos_autenticacao')
+    teste = ti.xcom_pull(task_ids='token_acesso')
     print(teste)
     print('deu certo!')
 
@@ -308,9 +313,9 @@ dag = DAG(
     catchup=False
 )
 
-seleciona_infos_autenticacao = PythonOperator(
-    task_id='seleciona_infos_autenticacao',
-    python_callable=seleciona_infos_autenticacao,
+token_acesso = PythonOperator(
+    task_id='token_acesso',
+    python_callable=token_acesso,
     dag=dag
 )
 
@@ -320,4 +325,4 @@ seleciona_parametro = PythonOperator(
     dag=dag
 )
 
-seleciona_infos_autenticacao >> seleciona_parametro
+token_acesso >> seleciona_parametro
