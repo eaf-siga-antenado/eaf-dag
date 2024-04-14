@@ -41,10 +41,10 @@ def colaboradores(**kwargs):
     df_colaboradores = pd.DataFrame() 
     dados_pagina = resposta_colaboradores.json()['data']
     for i in range(1, total_paginas_colaboradores+1):
-        headers = {'Authorization': access_token}
+        print('entrou no FOR')
         params['page'] = i
-        url_colaboradores = f'https://api.onfly.com.br/employees?include=document'
-        resposta = requests.request('GET', url_colaboradores, headers=headers, params=params)
+        resposta = requests.get('https://api.onfly.com.br/employees?include=document', headers=headers, params=params)
+        print('status da resposta', resposta.status_code)
         dados_pagina = resposta.json()['data']
         df_pagina = pd.DataFrame(dados_pagina)
         df_colaboradores = pd.concat([df_colaboradores, df_pagina], ignore_index=True)
