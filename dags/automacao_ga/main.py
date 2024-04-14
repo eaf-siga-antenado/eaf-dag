@@ -42,6 +42,7 @@ def extrair_dados_ga():
     import json
     import numpy as np
     import pandas as pd
+    from sqlalchemy import text
     from datetime import timedelta
     from datetime import datetime, date
     from airflow.models import Variable
@@ -99,8 +100,8 @@ def extrair_dados_ga():
         date_ranges=[DateRange(start_date=data_ref, end_date=data_ref)],)
         return request
     
-    # inicio_data_antiga = date(2022, 6, 5)
-    inicio_data_antiga = date(2023, 7, 5)
+    inicio_data_antiga = date(2022, 6, 5)
+    # inicio_data_antiga = date(2023, 7, 5)
     final_data_antiga = date(2023, 7, 16)
     lista_de_datas_antigas = [inicio_data_antiga + timedelta(days=i) for i in range((final_data_antiga - inicio_data_antiga).days + 1)]
 
@@ -114,8 +115,8 @@ def extrair_dados_ga():
     print('antigo foi:')
     print(df_antigo.head())        
 
-    # inicio_data_nova = date(2023, 7, 17)
-    inicio_data_nova = date(2024, 4, 5)
+    inicio_data_nova = date(2023, 7, 17)
+    # inicio_data_nova = date(2024, 4, 5)
     final_data_nova = date.today() - timedelta(days=1)
 
     lista_de_datas_novas = [inicio_data_nova + timedelta(days=i) for i in range((final_data_nova - inicio_data_nova).days + 1)]
@@ -143,6 +144,7 @@ def extrair_dados_ga():
     return output
 
 def envio_banco_dados(**kwargs):
+    import pyodbc
     print('começou aqui')
     ti = kwargs['ti']
     output = ti.xcom_pull(task_ids='extrair_dados')
@@ -159,7 +161,13 @@ def envio_banco_dados(**kwargs):
     subir['eventCount'] = subir['eventCount'].astype(pd.Int64Dtype())
     subir.drop(columns='city', inplace=True, axis=1)
 
-    subir.to_sql("google_analytics_events", engine, if_exists='replace', schema='eaf_tvro', index=False)
+    db_connection_string = (f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password};TIMEOUT=3600")
+    query_deleta = "TRUNCATE TABLE [eaf_tvro].[google_analytics_events]"
+    conn = pyodbc.connect(db_connection_string)
+    cursor = conn.cursor()
+    cursor.execute(query_deleta)
+
+    subir.to_sql("google_analytics_events", engine, if_exists='append', schema='eaf_tvro', index=False)
 
 default_args = {
     'start_date': datetime(2023, 8, 18, 6, 0, 0),
