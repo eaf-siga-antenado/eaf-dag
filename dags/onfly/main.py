@@ -29,22 +29,15 @@ def token_acesso():
 def colaboradores(**kwargs):
     ti = kwargs['ti']
     access_token = ti.xcom_pull(task_ids='token_acesso')
-    print(access_token)
     headers = {'Authorization': f'Bearer {access_token}'}
     params = {'page':1}
     resposta_colaboradores = requests.get('https://api.onfly.com.br/employees?include=document', headers=headers, params=params)
-    print('status code', resposta_colaboradores.status_code)
-    print('conteúdo do resultado:')
-    print(resposta_colaboradores.json())
     total_paginas_colaboradores = resposta_colaboradores.json()['meta']['pagination']['total_pages']
-    print('total_paginas_colaboradores', total_paginas_colaboradores)
     df_colaboradores = pd.DataFrame() 
     dados_pagina = resposta_colaboradores.json()['data']
     for i in range(1, total_paginas_colaboradores+1):
-        print('entrou no FOR')
         params['page'] = i
         resposta = requests.get('https://api.onfly.com.br/employees?include=document', headers=headers, params=params)
-        print('status da resposta', resposta.status_code)
         dados_pagina = resposta.json()['data']
         df_pagina = pd.DataFrame(dados_pagina)
         df_colaboradores = pd.concat([df_colaboradores, df_pagina], ignore_index=True)
@@ -54,7 +47,7 @@ def colaboradores(**kwargs):
 def centro_custo(**kwargs):
     ti = kwargs['ti']
     access_token = ti.xcom_pull(task_ids='token_acesso')
-    headers = {'Authorization': access_token}
+    headers = {'Authorization': f'Bearer {access_token}'}
     params = {'page':1}
     df_centro_custo = pd.DataFrame()
     headers = {'Authorization': access_token}
@@ -68,9 +61,27 @@ def centro_custo(**kwargs):
         dados_pagina = resposta.json()['data']
         df_pagina = pd.DataFrame(dados_pagina)
         df_centro_custo = pd.concat([df_centro_custo, df_pagina], ignore_index=True)
-    print('QUANTIDADE DE INFORMAÇÕES NO CENTRO DE CUSTO:')
-    print(len(df_centro_custo))
-    df_centro_custo.head()
+    
+    return df_centro_custo
+
+def grupo(**kwargs):
+    ti = kwargs['ti']
+    access_token = ti.xcom_pull(task_ids='token_acesso')
+    headers = {'Authorization': f'Bearer {access_token}'}
+    params = {'page':1}
+    df_grupo = pd.DataFrame()
+    resposta_grupo = requests.get('https://api.onfly.com.br/employee-groups', headers=headers)
+    total_paginas_grupo = resposta_grupo.json()['meta']['pagination']['total_pages']
+
+    for i in range(1, total_paginas_grupo+1):
+        params['page'] = i
+        resposta = requests.get('https://api.onfly.com.br/employee-groups', headers=headers, params=params)
+        dados_pagina = resposta.json()['data']
+        df_pagina = pd.DataFrame(dados_pagina)
+        df_grupo = pd.concat([df_grupo, df_pagina], ignore_index=True)
+    df_grupo = df_grupo.explode('employeesIds') 
+    print(len(df_grupo))
+    print(df_grupo.head())
 
 
 def verifica_data_banco():
@@ -369,4 +380,10 @@ centro_custo = PythonOperator(
     dag=dag
 )
 
-token_acesso >> colaboradores >> centro_custo
+grupo = PythonOperator(
+    task_id='grupo',
+    python_callable=grupo,
+    dag=dag
+)
+
+token_acesso >> colaboradores >> centro_custo >> grupo
