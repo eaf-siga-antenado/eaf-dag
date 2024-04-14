@@ -262,6 +262,7 @@ def tratamento_de_dados(**kwargs):
     final['cpf'] = final['cpf'].apply(remove_colchetes)
     final['cep'] = final['cep'].apply(remove_colchetes)
     final['telefone'] = final['telefone'].apply(remove_colchetes)
+    final.rename({'tempoEspera': 'tempoEspera_ms', 'tempoAtendimento': 'tempoAtendimento_ms'}, axis=1, inplace=True)
     return final
 
 def envio_banco_dados(**kwargs):
