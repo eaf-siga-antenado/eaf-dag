@@ -49,7 +49,7 @@ def colaboradores(**kwargs):
         df_pagina = pd.DataFrame(dados_pagina)
         df_colaboradores = pd.concat([df_colaboradores, df_pagina], ignore_index=True)
 
-    return colaboradores
+    return df_colaboradores
 
 def centro_custo(**kwargs):
     ti = kwargs['ti']
