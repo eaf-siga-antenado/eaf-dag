@@ -80,8 +80,28 @@ def grupo(**kwargs):
         df_pagina = pd.DataFrame(dados_pagina)
         df_grupo = pd.concat([df_grupo, df_pagina], ignore_index=True)
     df_grupo = df_grupo.explode('employeesIds') 
-    print(len(df_grupo))
-    print(df_grupo.head())
+    return df_grupo
+
+def despesa(**kwargs):
+    ti = kwargs['ti']
+    access_token = ti.xcom_pull(task_ids='token_acesso')
+    headers = {'Authorization': f'Bearer {access_token}'}
+    params = {'page':1}
+    df_despesa = pd.DataFrame()
+    resposta_despesa = requests.get('https://api.onfly.com.br/expense/expenditure', headers=headers, params=params)
+    total_paginas_despesa = resposta_despesa.json()['meta']['pagination']['total_pages']
+
+    for i in range(1, total_paginas_despesa+1):
+        params['page'] = i
+        resposta_despesa = requests.get('https://api.onfly.com.br/expense/expenditure', headers=headers, params=params)
+        dados_pagina_despesa = resposta_despesa.json()['data']
+        df_pagina_despesa = pd.DataFrame(dados_pagina_despesa)
+        df_despesa = pd.concat([df_despesa, df_pagina_despesa], ignore_index=True)
+    df_despesa['amount'] = df_despesa['amount'].astype(float) #tranformar coluna amount para float
+    df_despesa['amount'] = (df_despesa['amount']/100).map('{:,.2f}'.format) #formatar número coluna amount
+
+    print(len(df_despesa))
+    print(df_despesa.head())
 
 
 def verifica_data_banco():
@@ -386,4 +406,10 @@ grupo = PythonOperator(
     dag=dag
 )
 
-token_acesso >> colaboradores >> centro_custo >> grupo
+despesa = PythonOperator(
+    task_id='despesa',
+    python_callable=despesa,
+    dag=dag
+)
+
+token_acesso >> colaboradores >> centro_custo >> grupo >> despesa
