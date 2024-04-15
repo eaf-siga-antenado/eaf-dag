@@ -505,4 +505,4 @@ onibus = PythonOperator(
     dag=dag
 )
 
-token_acesso >> [colaboradores, centro_custo, grupo, despesa, automovel, onibus]
+token_acesso >> colaboradores >> centro_custo >> grupo >> despesa >> automovel >> onibus
