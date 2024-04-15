@@ -452,4 +452,4 @@ viagens_aereo = PythonOperator(
     dag=dag
 )
 
-token_acesso >> colaboradores >> centro_custo >> grupo >> viagens_aereo
+token_acesso >> colaboradores >> centro_custo >> grupo >> despesa >> viagens_aereo
