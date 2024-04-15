@@ -99,10 +99,44 @@ def despesa(**kwargs):
         df_despesa = pd.concat([df_despesa, df_pagina_despesa], ignore_index=True)
     df_despesa['amount'] = df_despesa['amount'].astype(float) #tranformar coluna amount para float
     df_despesa['amount'] = (df_despesa['amount']/100).map('{:,.2f}'.format) #formatar número coluna amount
+    return df_despesa
 
-    print(len(df_despesa))
-    print(df_despesa.head())
+def viagens_aereo(**kwargs):
+    import warnings
+    ti = kwargs['ti']
+    access_token = ti.xcom_pull(task_ids='token_acesso')
+    headers = {'Authorization': f'Bearer {access_token}'}
+    params = {'page':1}
+    df_viagens_aereo = pd.DataFrame()
+    resposta_viagens = requests.get('https://api.onfly.com.br/travel/order/fly-order/?include=travellers', headers=headers, params=params)
+    total_paginas_viagens = resposta_viagens.json()['meta']['pagination']['total_pages']
 
+    warnings.simplefilter(action='ignore', category=FutureWarning)
+    for i in range(1, total_paginas_viagens+1):
+        params['page'] = i
+        resposta_viagens= requests.get('https://api.onfly.com.br/travel/order/fly-order/?include=travellers', headers=headers, params=params)
+        dados_viagens = json.loads(resposta_viagens.text)
+        df_pagina = pd.DataFrame(pd.json_normalize(dados_viagens['data']))
+
+        #normalizar as colunas
+        df_travellersdata_normalizado = pd.DataFrame(pd.json_normalize(df_pagina['travellers.data']))
+        df_travellersdata_normalizado1 = pd.DataFrame(pd.json_normalize(df_travellersdata_normalizado[0],record_prefix='travellers.data'))
+        df_viagens_concatenado = pd.concat([df_pagina, df_travellersdata_normalizado1.add_prefix('travellers.')],axis=1)
+        df_viagens_concatenado = df_viagens_concatenado.drop(columns=['travellers.data'])
+        df_viagens_aereo = pd.concat([df_viagens_aereo, df_viagens_concatenado], axis=0)
+
+        excluir_colunas = ['ticketOutbound','ticketInbound','outbound.services','validationPolicy','inbound.services','outbound.stops']
+        df_viagens_aereo = df_viagens_aereo.drop(columns=[coluna for coluna in excluir_colunas if coluna in df_viagens_aereo.columns])
+    
+    #formatar número coluna
+    df_viagens_aereo['travellers.amount'] = (df_viagens_aereo['travellers.amount']/100).map('{:,.2f}'.format) 
+    df_viagens_aereo['inbound.priceOnfly'] = (df_viagens_aereo['inbound.priceOnfly']/100).map('{:,.2f}'.format)
+    df_viagens_aereo['inbound.priceCia'] = (df_viagens_aereo['inbound.priceCia'] /100).map('{:,.2f}'.format)
+    df_viagens_aereo['amount'] = (df_viagens_aereo['amount']/100).map('{:,.2f}'.format)
+    df_viagens_aereo['netAmount'] = (df_viagens_aereo['netAmount']/100).map('{:,.2f}'.format)
+    warnings.resetwarnings()
+    print(len(df_viagens_aereo))
+    print(df_viagens_aereo.head())
 
 def verifica_data_banco():
     server = Variable.get('DBSERVER')
@@ -412,4 +446,10 @@ despesa = PythonOperator(
     dag=dag
 )
 
-token_acesso >> colaboradores >> centro_custo >> grupo >> despesa
+viagens_aereo = PythonOperator(
+    task_id='viagens_aereo',
+    python_callable=viagens_aereo,
+    dag=dag
+)
+
+token_acesso >> colaboradores >> centro_custo >> grupo >> viagens_aereo
