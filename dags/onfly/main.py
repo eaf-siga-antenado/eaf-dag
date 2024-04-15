@@ -296,7 +296,11 @@ def envio_banco_dados(**kwargs):
 
     centro_custo.to_sql("centro_custo", engine, if_exists='append', index=False)
     grupo.to_sql("grupo", engine, if_exists='append', index=False)
-    despesa.to_sql("despesa", engine, if_exists='append', index=False)
+    try:
+        despesa.to_sql("despesa", engine, if_exists='append', index=False)
+    except Exception as e:
+        print('exibindo o erro:')
+        print(e)
     automovel.to_sql("automovel", engine, if_exists='append', index=False)
     onibus.to_sql("onibus", engine, if_exists='append', index=False)
     fatura.to_sql("fatura", engine, if_exists='append', index=False)
