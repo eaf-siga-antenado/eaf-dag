@@ -220,9 +220,38 @@ def creditos(**kwargs):
         pagina = pd.concat([df,df_normalize_0],axis=1)
         pagina = pagina[['id','name','createdAt','updatedAt','id_0','totalAmount_0','description_0','user_0']]
         df_creditos = pd.concat([df_creditos, pagina], ignore_index=True)
-    
-    print(len(df_creditos))
-    print(df_creditos.head())        
+    return df_creditos  
+
+def politicas(**kwargs):
+    ti = kwargs['ti']
+    access_token = ti.xcom_pull(task_ids='token_acesso')
+    headers = {'Authorization': f'Bearer {access_token}'}
+    params = {'page':1}
+    resp = requests.get('https://api.onfly.com.br/settings/travel-policy/approval-group?', headers=headers, params=params)
+    dict = json.loads(resp.text)
+    df = pd.DataFrame(dict['data'])
+
+    #abrir dicionários que estão como registros nas colunas
+    df_normalize_policy = pd.json_normalize(df['policy'])
+    df_normalize_costCenterSubjects = pd.json_normalize(df['costCenterSubjects'])
+    df_normalize_userSubjects = pd.json_normalize(df['userSubjects'])                           
+    df_normalize_levels = pd.json_normalize(df['levels']) 
+    df_normalize_confirmationUser = pd.json_normalize(df['confirmationUser'])
+    #concatenar dfs que abrimos os dicionarios
+    df_politica = pd.concat([df,df_normalize_policy,df_normalize_userSubjects,df_normalize_levels,df_normalize_confirmationUser], axis = 1).drop(['policy','userSubjects','levels','confirmationUser','failOverApprovalGroup','costCenterSubjects'],axis=1)
+    #colunas a serem consideradas no df
+    colunas_finais = ['id','type','isActive','name','createdAt','updatedAt','policyId','highPrioritySubjectGroupId','lowPrioritySubjectGroupId','confirmationUserId','data.name','data.description','data.isActive',
+                        'data.inUse','data.createdAt','data.rules.data.hasToApproveExpenditure']
+    df_politica = df_politica[colunas_finais]
+
+    #renomear colunas duplicadas para desconsiderar no df
+    df_politica.columns.values[11] = 'data.name_delete'
+    df_politica.columns.values[16] = 'data.createdAt_delete'
+
+    #deletar colunas 
+    df_politica.drop(columns=['data.name_delete','data.createdAt_delete'],axis=1, inplace=True)
+    print(len(df_politica))
+    print(df_politica.head())
 
 def verifica_data_banco():
     server = Variable.get('DBSERVER')
@@ -562,4 +591,10 @@ creditos = PythonOperator(
     dag=dag
 )
 
-token_acesso >> colaboradores >> centro_custo >> grupo >> despesa >> automovel >> onibus >> fatura >> creditos
+politicas = PythonOperator(
+    task_id='politicas',
+    python_callable=politicas,
+    dag=dag
+)
+
+token_acesso >> colaboradores >> centro_custo >> grupo >> despesa >> automovel >> onibus >> fatura >> creditos >> politicas
