@@ -276,16 +276,16 @@ def envio_banco_dados(**kwargs):
 
     with engine.connect() as connection:
         
-        connection.execute("IF OBJECT_ID('dbo.colaboradores', 'U') IS NOT NULL BEGIN DELETE TABLE dbo.colaboradores END")
-        connection.execute("IF OBJECT_ID('dbo.viagens_aereo', 'U') IS NOT NULL BEGIN DELETE TABLE dbo.viagens_aereo END")
-        connection.execute("IF OBJECT_ID('dbo.centro_custo', 'U') IS NOT NULL BEGIN DELETE TABLE dbo.centro_custo END")
-        connection.execute("IF OBJECT_ID('dbo.grupo', 'U') IS NOT NULL BEGIN DELETE TABLE dbo.grupo END")
-        connection.execute("IF OBJECT_ID('dbo.despesa', 'U') IS NOT NULL BEGIN DELETE TABLE dbo.despesa END")
-        connection.execute("IF OBJECT_ID('dbo.automovel', 'U') IS NOT NULL BEGIN DELETE TABLE dbo.automovel END")
-        connection.execute("IF OBJECT_ID('dbo.onibus', 'U') IS NOT NULL BEGIN DELETE TABLE dbo.onibus END")
-        connection.execute("IF OBJECT_ID('dbo.fatura', 'U') IS NOT NULL BEGIN DELETE TABLE dbo.fatura END")
-        connection.execute("IF OBJECT_ID('dbo.creditos', 'U') IS NOT NULL BEGIN DELETE TABLE dbo.creditos END")
-        connection.execute("IF OBJECT_ID('dbo.politicas', 'U') IS NOT NULL BEGIN DELETE TABLE dbo.politicas END")
+        connection.execute("IF OBJECT_ID('dbo.colaboradores', 'U') IS NOT NULL BEGIN DELETE FROM dbo.colaboradores END")
+        connection.execute("IF OBJECT_ID('dbo.viagens_aereo', 'U') IS NOT NULL BEGIN DELETE FROM dbo.viagens_aereo END")
+        connection.execute("IF OBJECT_ID('dbo.centro_custo', 'U') IS NOT NULL BEGIN DELETE FROM dbo.centro_custo END")
+        connection.execute("IF OBJECT_ID('dbo.grupo', 'U') IS NOT NULL BEGIN DELETE FROM dbo.grupo END")
+        connection.execute("IF OBJECT_ID('dbo.despesa', 'U') IS NOT NULL BEGIN DELETE FROM dbo.despesa END")
+        connection.execute("IF OBJECT_ID('dbo.automovel', 'U') IS NOT NULL BEGIN DELETE FROM dbo.automovel END")
+        connection.execute("IF OBJECT_ID('dbo.onibus', 'U') IS NOT NULL BEGIN DELETE FROM dbo.onibus END")
+        connection.execute("IF OBJECT_ID('dbo.fatura', 'U') IS NOT NULL BEGIN DELETE FROM dbo.fatura END")
+        connection.execute("IF OBJECT_ID('dbo.creditos', 'U') IS NOT NULL BEGIN DELETE FROM dbo.creditos END")
+        connection.execute("IF OBJECT_ID('dbo.politicas', 'U') IS NOT NULL BEGIN DELETE FROM dbo.politicas END")
     
     colaboradores.to_sql("colaboradores", engine, if_exists='append', index=False)
     viagens_aereo.to_sql("viagens_aereo", engine, if_exists='append', index=False)
