@@ -141,7 +141,10 @@ def viagens_aereo(**kwargs):
     username = Variable.get('DBUSER-RH')
     password = Variable.get('DBPASSWORD-RH')
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
-    viagens_aereo.to_sql("viagens_aereo", engine, if_exists='append', index=False)
+    print(df_viagens_aereo.head())
+    print('QUANTIDADE DE COLUNAS:')
+    print(len(df_viagens_aereo.columns))
+    df_viagens_aereo.to_sql("viagens_aereo", engine, if_exists='append', index=False)
     # return df_viagens_aereo
 
 def automovel(**kwargs):
