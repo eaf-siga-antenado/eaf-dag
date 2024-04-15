@@ -57,8 +57,6 @@ def extrair_dados_ga():
     chave = Variable.get("chave", deserialize_json=True)
     chave = json.loads(json.dumps(chave))
     chave = service_account.Credentials.from_service_account_info(chave)
-    client = BetaAnalyticsDataClient(credentials=chave)
-    response = client.run_report(request)
 
     dia_anterior = datetime.now() - timedelta(days=1)
     dia_anterior = dia_anterior.strftime("%Y-%m-%d")
@@ -71,8 +69,9 @@ def extrair_dados_ga():
     order_bys=[OrderBy(dimension={'dimension_name': 'date'}),],
     date_ranges=[DateRange(start_date=dia_anterior, end_date=dia_anterior)],)
 
+    client = BetaAnalyticsDataClient(credentials=chave)
+    response = client.run_report(request)
     
-
     # Row index
     row_index_names = [header.name for header in response.dimension_headers]
     row_header = []
