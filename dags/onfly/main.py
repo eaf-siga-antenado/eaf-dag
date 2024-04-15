@@ -135,8 +135,30 @@ def viagens_aereo(**kwargs):
     df_viagens_aereo['amount'] = (df_viagens_aereo['amount']/100).map('{:,.2f}'.format)
     df_viagens_aereo['netAmount'] = (df_viagens_aereo['netAmount']/100).map('{:,.2f}'.format)
     warnings.resetwarnings()
-    print(len(df_viagens_aereo))
-    print(df_viagens_aereo.head())
+    return df_viagens_aereo
+
+def automovel(**kwargs):
+    ti = kwargs['ti']
+    access_token = ti.xcom_pull(task_ids='token_acesso')
+    headers = {'Authorization': f'Bearer {access_token}'}
+    params = {'page':1}
+    df_automovel = pd.DataFrame()
+    resposta_automovel = requests.get('https://api.onfly.com.br/travel/order/auto-order?include=client', headers=headers, params=params)
+    total_paginas_automovel = resposta_automovel.json()['meta']['pagination']['total_pages']
+
+    for i in range(1, total_paginas_automovel+1):
+        params['page'] = i
+        resposta_automovel = requests.get('https://api.onfly.com.br/travel/order/auto-order?include=client', headers=headers, params=params)
+        dados_automovel = json.loads(resposta_automovel.text)
+        df_pagina = pd.DataFrame(pd.json_normalize(dados_automovel['data']))
+        df_automovel = pd.concat([df_automovel,df_pagina],axis=0,ignore_index=True)
+
+    df_automovel['amount'] = (df_automovel['amount']/100).map('{:,.2f}'.format)
+    df_automovel['netAmount'] = (df_automovel['netAmount']/100).map('{:,.2f}'.format)
+    df_automovel['amountPerDay'] = (df_automovel['amountPerDay'] /100).map('{:,.2f}'.format)
+    df_automovel['dailyAmount'] = (df_automovel['dailyAmount'] /100).map('{:,.2f}'.format)
+    print(len(df_automovel))
+    print(df_automovel.head())
 
 def verifica_data_banco():
     server = Variable.get('DBSERVER')
@@ -446,10 +468,16 @@ despesa = PythonOperator(
     dag=dag
 )
 
-viagens_aereo = PythonOperator(
-    task_id='viagens_aereo',
-    python_callable=viagens_aereo,
+# viagens_aereo = PythonOperator(
+#     task_id='viagens_aereo',
+#     python_callable=viagens_aereo,
+#     dag=dag
+# )
+
+automovel = PythonOperator(
+    task_id='automovel',
+    python_callable=automovel,
     dag=dag
 )
 
-token_acesso >> colaboradores >> centro_custo >> grupo >> despesa >> viagens_aereo
+token_acesso >> [colaboradores, centro_custo, grupo, despesa, automovel]
