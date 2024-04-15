@@ -255,42 +255,47 @@ def politicas(**kwargs):
 
 def envio_banco_dados(**kwargs):
 
-    # ti = kwargs['ti']
-    # colaboradores = ti.xcom_pull(task_ids='colaboradores')
-    # centro_custo = ti.xcom_pull(task_ids='centro_custo')
-    # grupo = ti.xcom_pull(task_ids='grupo')
-    # despesa = ti.xcom_pull(task_ids='despesa')
-    # automovel = ti.xcom_pull(task_ids='automovel')
-    # onibus = ti.xcom_pull(task_ids='onibus')
-    # fatura = ti.xcom_pull(task_ids='fatura')
-    # creditos = ti.xcom_pull(task_ids='creditos')
-    # politicas = ti.xcom_pull(task_ids='politicas')
+    ti = kwargs['ti']
+    colaboradores = ti.xcom_pull(task_ids='colaboradores')
+    viagens_aereo = ti.xcom_pull(task_ids='viagens_aereo')
+    centro_custo = ti.xcom_pull(task_ids='centro_custo')
+    grupo = ti.xcom_pull(task_ids='grupo')
+    despesa = ti.xcom_pull(task_ids='despesa')
+    automovel = ti.xcom_pull(task_ids='automovel')
+    onibus = ti.xcom_pull(task_ids='onibus')
+    fatura = ti.xcom_pull(task_ids='fatura')
+    creditos = ti.xcom_pull(task_ids='creditos')
+    politicas = ti.xcom_pull(task_ids='politicas')
 
     server = Variable.get('DBSERVER')
     database = Variable.get('DATABASE-RH')
     username = Variable.get('DBUSER-RH')
     password = Variable.get('DBPASSWORD-RH')
 
-    print(server)    
-    print(database)
-    print(username)
-    print(password)
-    
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
 
     with engine.connect() as connection:
-        print('CRIANDO A CONEXÃO!!!')
         connection.execute("DELETE FROM dbo.colaboradores")
+        connection.execute("DELETE FROM dbo.viagens_aereo")
+        connection.execute("DELETE FROM dbo.centro_custo")
+        connection.execute("DELETE FROM dbo.grupo")
+        connection.execute("DELETE FROM dbo.despesa")
+        connection.execute("DELETE FROM dbo.automovel")
+        connection.execute("DELETE FROM dbo.onibus")
+        connection.execute("DELETE FROM dbo.fatura")
+        connection.execute("DELETE FROM dbo.creditos")
+        connection.execute("DELETE FROM dbo.politicas")
     
-    # colaboradores.to_sql("colaboradores", engine, if_exists='replace', index=False)
-    # centro_custo.to_sql("centro_custo", engine, if_exists='replace', index=False)
-    # grupo.to_sql("grupo", engine, if_exists='replace', index=False)
-    # despesa.to_sql("despesa", engine, if_exists='replace', index=False)
-    # automovel.to_sql("automovel", engine, if_exists='replace', index=False)
-    # onibus.to_sql("onibus", engine, if_exists='replace', index=False)
-    # fatura.to_sql("fatura", engine, if_exists='replace', index=False)
-    # creditos.to_sql("creditos", engine, if_exists='replace', index=False)
-    # politicas.to_sql("politicas", engine, if_exists='replace', index=False)
+    colaboradores.to_sql("colaboradores", engine, if_exists='append', index=False)
+    viagens_aereo.to_sql("viagens_aereo", engine, if_exists='append', index=False)
+    centro_custo.to_sql("centro_custo", engine, if_exists='append', index=False)
+    grupo.to_sql("grupo", engine, if_exists='append', index=False)
+    despesa.to_sql("despesa", engine, if_exists='append', index=False)
+    automovel.to_sql("automovel", engine, if_exists='append', index=False)
+    onibus.to_sql("onibus", engine, if_exists='append', index=False)
+    fatura.to_sql("fatura", engine, if_exists='append', index=False)
+    creditos.to_sql("creditos", engine, if_exists='append', index=False)
+    politicas.to_sql("politicas", engine, if_exists='append', index=False)
 
 default_args = {
     'start_date': datetime(2023, 8, 1, 6, 0, 0)
@@ -305,71 +310,71 @@ dag = DAG(
     catchup=False
 )
 
-# token_acesso = PythonOperator(
-#     task_id='token_acesso',
-#     python_callable=token_acesso,
-#     dag=dag
-# )
+token_acesso = PythonOperator(
+    task_id='token_acesso',
+    python_callable=token_acesso,
+    dag=dag
+)
 
-# colaboradores = PythonOperator(
-#     task_id='colaboradores',
-#     python_callable=colaboradores,
-#     dag=dag
-# )
+colaboradores = PythonOperator(
+    task_id='colaboradores',
+    python_callable=colaboradores,
+    dag=dag
+)
 
-# centro_custo = PythonOperator(
-#     task_id='centro_custo',
-#     python_callable=centro_custo,
-#     dag=dag
-# )
+centro_custo = PythonOperator(
+    task_id='centro_custo',
+    python_callable=centro_custo,
+    dag=dag
+)
 
-# grupo = PythonOperator(
-#     task_id='grupo',
-#     python_callable=grupo,
-#     dag=dag
-# )
+grupo = PythonOperator(
+    task_id='grupo',
+    python_callable=grupo,
+    dag=dag
+)
 
-# despesa = PythonOperator(
-#     task_id='despesa',
-#     python_callable=despesa,
-#     dag=dag
-# )
+despesa = PythonOperator(
+    task_id='despesa',
+    python_callable=despesa,
+    dag=dag
+)
 
-# viagens_aereo = PythonOperator(
-#     task_id='viagens_aereo',
-#     python_callable=viagens_aereo,
-#     dag=dag
-# )
+viagens_aereo = PythonOperator(
+    task_id='viagens_aereo',
+    python_callable=viagens_aereo,
+    dag=dag
+)
 
-# automovel = PythonOperator(
-#     task_id='automovel',
-#     python_callable=automovel,
-#     dag=dag
-# )
+automovel = PythonOperator(
+    task_id='automovel',
+    python_callable=automovel,
+    dag=dag
+)
 
-# onibus = PythonOperator(
-#     task_id='onibus',
-#     python_callable=onibus,
-#     dag=dag
-# )
+onibus = PythonOperator(
+    task_id='onibus',
+    python_callable=onibus,
+    dag=dag
+)
 
-# fatura = PythonOperator(
-#     task_id='fatura',
-#     python_callable=fatura,
-#     dag=dag
-# )
+fatura = PythonOperator(
+    task_id='fatura',
+    python_callable=fatura,
+    dag=dag
+)
 
-# creditos = PythonOperator(
-#     task_id='creditos',
-#     python_callable=creditos,
-#     dag=dag
-# )
+creditos = PythonOperator(
+    task_id='creditos',
+    python_callable=creditos,
+    dag=dag
+)
 
-# politicas = PythonOperator(
-#     task_id='politicas',
-#     python_callable=politicas,
-#     dag=dag
-# )
+politicas = PythonOperator(
+    task_id='politicas',
+    python_callable=politicas,
+    dag=dag
+)
 
 envio_banco_dados = PythonOperator(
     task_id='envio_banco_dados',
@@ -377,6 +382,4 @@ envio_banco_dados = PythonOperator(
     dag=dag
 )
 
-# token_acesso >> colaboradores >> centro_custo >> grupo >> despesa >> automovel >> onibus >> fatura >> creditos >> politicas
-
-envio_banco_dados
+token_acesso >> colaboradores >> viagens_aereo >> centro_custo >> grupo >> despesa >> automovel >> onibus >> fatura >> creditos >> politicas >> envio_banco_dados
