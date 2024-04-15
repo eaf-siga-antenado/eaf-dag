@@ -288,7 +288,7 @@ def envio_banco_dados(**kwargs):
         connection.execute("IF OBJECT_ID('dbo.politicas', 'U') IS NOT NULL BEGIN DELETE FROM dbo.politicas END")
     
     colaboradores.to_sql("colaboradores", engine, if_exists='append', index=False)
-    viagens_aereo.to_sql("viagens_aereo", engine, if_exists='append', index=False)
+    viagens_aereo.to_sql("viagens_aereo", engine, if_exists='replace', index=False)
     centro_custo.to_sql("centro_custo", engine, if_exists='append', index=False)
     grupo.to_sql("grupo", engine, if_exists='append', index=False)
     despesa.to_sql("despesa", engine, if_exists='append', index=False)
