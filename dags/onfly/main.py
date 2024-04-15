@@ -269,6 +269,12 @@ def envio_banco_dados(**kwargs):
     database = Variable.get('DATABASE-RH')
     username = Variable.get('DBUSER-RH')
     password = Variable.get('DBPASSWORD-RH')
+
+    print(server)    
+    print(database)
+    print(username)
+    print(password)
+    
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
 
     with engine.connect() as connection:
