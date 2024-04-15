@@ -41,7 +41,8 @@ def colaboradores(**kwargs):
         dados_pagina = resposta.json()['data']
         df_pagina = pd.DataFrame(dados_pagina)
         df_colaboradores = pd.concat([df_colaboradores, df_pagina], ignore_index=True)
-
+    
+    df_colaboradores.drop(columns='document', axis=1, inplace=True)
     return df_colaboradores
 
 def centro_custo(**kwargs):
@@ -279,7 +280,7 @@ def envio_banco_dados(**kwargs):
 
     with engine.connect() as connection:
         print('CRIANDO A CONEXÃO!!!')
-        connection.execute("TRUNCATE TABLE dbo.colaboradores")
+        connection.execute("DELETE FROM dbo.colaboradores")
     
     # colaboradores.to_sql("colaboradores", engine, if_exists='replace', index=False)
     # centro_custo.to_sql("centro_custo", engine, if_exists='replace', index=False)
