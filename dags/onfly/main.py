@@ -160,6 +160,25 @@ def automovel(**kwargs):
     print(len(df_automovel))
     print(df_automovel.head())
 
+def onibus(**kwargs):
+    ti = kwargs['ti']
+    access_token = ti.xcom_pull(task_ids='token_acesso')
+    headers = {'Authorization': f'Bearer {access_token}'}
+    params = {'page':1}
+    df_onibus = pd.DataFrame()
+    resposta_onibus = requests.get('https://api.onfly.com.br/travel/order/bus-order?include=client', headers=headers, params=params)
+    total_paginas_onibus = resposta_onibus.json()['meta']['pagination']['total_pages']
+    
+    for i in range(1, total_paginas_onibus+1):
+        resposta_onibus = requests.get('https://api.onfly.com.br/travel/order/bus-order?include=client', headers=headers)
+        dados_onibus = json.loads(resposta_onibus.text)
+        df_pagina = pd.DataFrame(pd.json_normalize(dados_onibus['data']))
+        df_onibus = pd.concat([df_onibus,df_pagina],axis=0,ignore_index=True)
+
+    df_onibus['amount'] = (df_onibus['amount']/100).map('{:,.2f}'.format) #formatar número coluna amount
+    print(len(df_onibus))
+    print(df_onibus.head())
+
 def verifica_data_banco():
     server = Variable.get('DBSERVER')
     database = Variable.get('DATABASE')
@@ -480,4 +499,10 @@ automovel = PythonOperator(
     dag=dag
 )
 
-token_acesso >> [colaboradores, centro_custo, grupo, despesa, automovel]
+onibus = PythonOperator(
+    task_id='onibus',
+    python_callable=onibus,
+    dag=dag
+)
+
+token_acesso >> [colaboradores, centro_custo, grupo, despesa, automovel, onibus]
