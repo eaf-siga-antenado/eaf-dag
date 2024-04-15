@@ -179,6 +179,26 @@ def onibus(**kwargs):
     print(len(df_onibus))
     print(df_onibus.head())
 
+def fatura(**kwargs):
+    ti = kwargs['ti']
+    access_token = ti.xcom_pull(task_ids='token_acesso')
+    headers = {'Authorization': f'Bearer {access_token}'}
+    params = {'page':1}
+    resposta_fatura = requests.get('https://api.onfly.com.br/financial/invoice/list/invoice?iclude=details', headers=headers)
+    total_paginas_fatura = resposta_fatura.json()['meta']['pagination']['total_pages']
+    dados_pagina_fatura = resposta_fatura.json()['data']
+    df_fatura = pd.DataFrame(dados_pagina_fatura)
+
+    for i in range(1, total_paginas_fatura+1):
+        params['page'] = i
+        resposta_fatura = requests.get('https://api.onfly.com.br/financial/invoice/list/invoice?iclude=details', headers=headers)
+        dados_pagina_fatura = resposta_fatura.json()['data']
+        df_pagina_fatura = pd.DataFrame(dados_pagina_fatura)
+        df_fatura = pd.concat([df_fatura,df_pagina_fatura], ignore_index=True)
+    df_fatura['amount'] = (df_fatura['amount']/100).map('{:,.2f}'.format)
+    print(len(df_fatura))
+    print(df_fatura.head())
+
 def verifica_data_banco():
     server = Variable.get('DBSERVER')
     database = Variable.get('DATABASE')
@@ -505,4 +525,10 @@ onibus = PythonOperator(
     dag=dag
 )
 
-token_acesso >> colaboradores >> centro_custo >> grupo >> despesa >> automovel >> onibus
+fatura = PythonOperator(
+    task_id='fatura',
+    python_callable=fatura,
+    dag=dag
+)
+
+token_acesso >> colaboradores >> centro_custo >> grupo >> despesa >> automovel >> onibus >> fatura
