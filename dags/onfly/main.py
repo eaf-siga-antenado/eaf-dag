@@ -157,8 +157,7 @@ def automovel(**kwargs):
     df_automovel['netAmount'] = (df_automovel['netAmount']/100).map('{:,.2f}'.format)
     df_automovel['amountPerDay'] = (df_automovel['amountPerDay'] /100).map('{:,.2f}'.format)
     df_automovel['dailyAmount'] = (df_automovel['dailyAmount'] /100).map('{:,.2f}'.format)
-    print(len(df_automovel))
-    print(df_automovel.head())
+    return df_automovel
 
 def onibus(**kwargs):
     ti = kwargs['ti']
@@ -176,8 +175,7 @@ def onibus(**kwargs):
         df_onibus = pd.concat([df_onibus,df_pagina],axis=0,ignore_index=True)
 
     df_onibus['amount'] = (df_onibus['amount']/100).map('{:,.2f}'.format) #formatar número coluna amount
-    print(len(df_onibus))
-    print(df_onibus.head())
+    return df_onibus
 
 def fatura(**kwargs):
     ti = kwargs['ti']
@@ -196,8 +194,35 @@ def fatura(**kwargs):
         df_pagina_fatura = pd.DataFrame(dados_pagina_fatura)
         df_fatura = pd.concat([df_fatura,df_pagina_fatura], ignore_index=True)
     df_fatura['amount'] = (df_fatura['amount']/100).map('{:,.2f}'.format)
-    print(len(df_fatura))
-    print(df_fatura.head())
+    return df_fatura
+
+def creditos(**kwargs):
+    ti = kwargs['ti']
+    access_token = ti.xcom_pull(task_ids='token_acesso')
+    headers = {'Authorization': f'Bearer {access_token}'}
+    params = {'page':1}
+    df_creditos  = pd.DataFrame()
+    resp = requests.get('https://api.onfly.com.br/credits/groupByConsumer', headers=headers, params=params)
+    total_paginas = resp.json()['meta']['pagination']['total_pages']
+
+    for i in range(1, total_paginas+1):
+        params['page'] = i
+        resp = requests.get('https://api.onfly.com.br/credits/groupByConsumer', headers=headers, params=params)
+        dict = json.loads(resp.text)
+        df = pd.DataFrame(dict['data'])
+        df_normalize_credits = pd.json_normalize(df['credits'])
+        df = pd.concat([df,df_normalize_credits],axis=1).drop(['credits'], axis=1)
+        df_normalize_data = pd.json_normalize(df['data'])
+        df = pd.concat([df,df_normalize_data],axis=1).drop(['data'],axis=1)
+        df_normalize_0 = pd.json_normalize(df[0])
+        df_normalize_0 = df_normalize_0[['id','totalAmount','description','user']]
+        df_normalize_0 = df_normalize_0.rename(columns={'id':'id_0','totalAmount':'totalAmount_0','description':'description_0','user':'user_0'})
+        pagina = pd.concat([df,df_normalize_0],axis=1)
+        pagina = pagina[['id','name','createdAt','updatedAt','id_0','totalAmount_0','description_0','user_0']]
+        df_creditos = pd.concat([df_creditos, pagina], ignore_index=True)
+    
+    print(len(df_creditos))
+    print(df_creditos.head())        
 
 def verifica_data_banco():
     server = Variable.get('DBSERVER')
@@ -531,4 +556,10 @@ fatura = PythonOperator(
     dag=dag
 )
 
-token_acesso >> colaboradores >> centro_custo >> grupo >> despesa >> automovel >> onibus >> fatura
+creditos = PythonOperator(
+    task_id='creditos',
+    python_callable=creditos,
+    dag=dag
+)
+
+token_acesso >> colaboradores >> centro_custo >> grupo >> despesa >> automovel >> onibus >> fatura >> creditos
