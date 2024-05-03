@@ -49,8 +49,29 @@ def extrair_dados_api():
     def extrair_instaladora(valor):
         partes = valor.split(' - ')
         return partes[0].strip().capitalize()
+    
+    def formata_nome(value):
+        if 'elsys' in value.lower():
+            return 'Elsys'
+        elif 'intelbras' in value.lower():
+            return 'Intelbras'
+        elif 'master' in value.lower():
+            return 'Master'
+        elif 'multilaser' in value.lower():
+            return 'Multilaser'
+        elif 'serede' in value.lower():
+            return 'Serede'
+        elif 'sky' in value.lower():
+            return 'Sky'
+        elif 'visiontec' in value.lower():
+            return 'Visiontec'
+        elif 'vivensis' in value.lower():
+            return 'Vivensis'
+        return value
+
 
     df_groups['instaladora'] = df_groups['name'].apply(extrair_instaladora)
+    df_groups['instaladora'] = df_groups['instaladora'].apply(formata_nome)
     df_groups.drop(columns='name', inplace=True)
     df_groups['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
     df_groups['id'] = df_groups['id'].astype(str)
