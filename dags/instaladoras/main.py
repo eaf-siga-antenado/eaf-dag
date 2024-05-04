@@ -167,8 +167,8 @@ def mensagem_telegram():
 
 default_args = {
     'start_date': datetime(2023, 8, 18, 6, 0, 0),
-    'retries': 3,
-    'retry_delay': timedelta(minutes=5)
+    'retries': None
+    # 'retry_delay': timedelta(minutes=5)
 }
 
 dag = DAG(
