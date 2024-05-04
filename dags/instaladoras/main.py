@@ -40,7 +40,7 @@ def extrair_dados_api():
     headers = {
     "cookie": "_x_w=44_1; _helpkit_session=BAh7B0kiD3Nlc3Npb25faWQGOgZFVEkiJTM2ODNlMGZhYTU2M2MwMTA2ZTQ5YzQ0ZDEzZmMxNzZkBjsAVEkiDnJldHVybl90bwY7AEZJIhsvYXBpL3YyL3RpY2tldHMvMjE0OTMzBjsAVA%253D%253D--c7bf5ca7bb64c92d80051a494967c4c3b61f7434",
     "Content-Type": "application/json",
-    "Authorization": "Basic YVQ1S1h5NHQzZjh4MjZlYmFL"
+    "Authorization": "Basic RUVaR3lGbG9qMXRZWmRjcWg4OFE="
     }
     response = requests.request("GET", url, data=payload, headers=headers)
     tabela_ibge = response.json()
