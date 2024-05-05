@@ -112,6 +112,8 @@ def tratando_dados(**kwargs):
     ti = kwargs['ti']
     base_ibge = ti.xcom_pull(task_ids='extrair_ibge_banco')
     base = pd.read_csv('temp.csv')
+    print('O ARQUIVO CHEGOU AQUI:', len(base))
+    print(base.head())
     base.dropna(axis=1, how='all', inplace=True)
     base.drop(columns=['IBGE Code on List', 'Fase'], axis=1, inplace=True)
     final_data = []
