@@ -148,11 +148,10 @@ def tratando_dados(**kwargs):
     df_final['InstaladoraIBGE'] = df_final['fornecedor'].str.upper() + df_final['ibge'].astype(str)
     df_final['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
     print('DEU TUDO CERTO')
-    print('O ARQUIVO CHEGOU AQUI:', len(base))
+    print('O ARQUIVO CHEGOU AQUI:', len(df_final))
     print(df_final.head(20))
     print('TIPO DO ARQUIVO:', type(df_final))
-
-    return df_final
+    return base
 
 def envio_banco_dados(**kwargs):
 
@@ -165,7 +164,7 @@ def envio_banco_dados(**kwargs):
     password = Variable.get('DBPASSWORD')
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
 
-    subir.to_sql("capacidade_instaladoras", engine, if_exists='replace', schema='eaf_tvro', index=False)
+    subir.to_sql("capacidade_instaladoras", engine, if_exists='fail', schema='eaf_tvro', index=False)
 
 def mensagem_telegram():
     TOKEN = Variable.get("TELEGRAM_DAILY_STATUS_TOKEN")
