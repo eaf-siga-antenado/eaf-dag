@@ -115,11 +115,14 @@ def tratando_dados(**kwargs):
     print('O ARQUIVO CHEGOU AQUI:', len(base))
     print(base.head())
     base.dropna(axis=1, how='all', inplace=True)
+    print('DROPNA')
     base.drop(columns=['IBGE Code on List', 'Fase'], axis=1, inplace=True)
+    print('DROP COLUMNS')
     final_data = []
     maior_numero = max(int(col.split()[-1]) for col in base.columns if col.startswith('Fornecedor '))
 
     for _, row in base.iterrows():
+        print('ENTROU NO FOR')
         uf = row['UF']
         ibge = row['COD_IBGE']
         municipio = row['Município']
