@@ -147,6 +147,10 @@ def tratando_dados(**kwargs):
     # df_final = df_final[df_final['instalacoes_dia'] > 0]
     df_final['InstaladoraIBGE'] = df_final['fornecedor'].str.upper() + df_final['ibge'].astype(str)
     df_final['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
+    print('DEU TUDO CERTO')
+    print('O ARQUIVO CHEGOU AQUI:', len(base))
+    print(df_final.head(20))
+    print('TIPO DO ARQUIVO:', type(df_final))
 
     return df_final
 
