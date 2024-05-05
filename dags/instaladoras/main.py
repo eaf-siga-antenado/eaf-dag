@@ -136,12 +136,14 @@ def tratando_dados(**kwargs):
             id_grupo = row[id_grupo_col]
             if fornecedor is not None and not pd.isna(instalacoes):
                 final_data.append([uf, ibge, municipio, instalacoes_prev, fornecedor, instalacoes, id_grupo])
-
+    print('TERMINOU O LOOP FOR')
     df_final = pd.DataFrame(final_data, columns=['uf', 'ibge', 'municipio', 'total_instalacoes_previstas', 'fornecedor', 'instalacoes_dia', 'id_grupo'])
+    print('FEZ O DATAFRAME')
     df_final['instalacoes_dia'] = df_final['instalacoes_dia'].astype(int)
     df_final['id_grupo'] = df_final['id_grupo'].astype('int64')
     df_final['id_grupo'] = df_final['id_grupo'].astype(str)
     df_final = df_final.merge(base_ibge, how='left', on='ibge')
+    print('FEZ O JOIN')
     # df_final = df_final[df_final['instalacoes_dia'] > 0]
     df_final['InstaladoraIBGE'] = df_final['fornecedor'].str.upper() + df_final['ibge'].astype(str)
     df_final['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
