@@ -139,8 +139,8 @@ def tratando_dados(**kwargs):
     # df_final = df_final[df_final['instalacoes_dia'] > 0]
     df_final['InstaladoraIBGE'] = df_final['fornecedor'].str.upper() + df_final['ibge'].astype(str)
     df_final['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
-    print(df_final.head(20))
-    return df_final.to_dict('valores')
+    print('tipo do arquivo:', type(df_final))
+    return df_final
 
 def envio_banco_dados(**kwargs):
 
