@@ -136,7 +136,6 @@ def tratando_dados(**kwargs):
     df_final['id_grupo'] = df_final['id_grupo'].astype('int64')
     df_final['id_grupo'] = df_final['id_grupo'].astype(str)
     df_final = df_final.merge(base_ibge, how='left', on='ibge')
-    # df_final = df_final[df_final['instalacoes_dia'] > 0]
     df_final['InstaladoraIBGE'] = df_final['fornecedor'].str.upper() + df_final['ibge'].astype(str)
     df_final['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
     print('tipo do arquivo:', type(df_final))
@@ -160,8 +159,8 @@ def envio_banco_dados(**kwargs):
 
 default_args = {
     'start_date': datetime(2023, 8, 18, 6, 0, 0),
-    'retries': None
-    # 'retry_delay': timedelta(minutes=5)
+    'retries': 2,
+    'retry_delay': timedelta(minutes=5)
 }
 
 dag = DAG(
