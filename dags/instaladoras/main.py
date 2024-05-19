@@ -156,7 +156,7 @@ def envio_banco_dados(**kwargs):
     password = Variable.get('DBPASSWORD')
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
 
-    subir.to_sql("capacidade_instaladoras", engine, if_exists='fail', schema='eaf_tvro', index=False)
+    subir.to_sql("capacidade_instaladoras", engine, if_exists='replace', schema='eaf_tvro', index=False)
 
 default_args = {
     'start_date': datetime(2023, 8, 18, 6, 0, 0),
