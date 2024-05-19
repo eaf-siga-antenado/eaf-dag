@@ -140,6 +140,7 @@ def tratando_dados(**kwargs):
     df_final['InstaladoraIBGE'] = df_final['fornecedor'].str.upper() + df_final['ibge'].astype(str)
     df_final['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
     print('tipo do arquivo:', type(df_final))
+    df_final = df_final[~(df_final['id_grupo'] == '0')]
     return df_final
 
 def envio_banco_dados(**kwargs):
@@ -156,15 +157,6 @@ def envio_banco_dados(**kwargs):
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
 
     subir.to_sql("capacidade_instaladoras", engine, if_exists='fail', schema='eaf_tvro', index=False)
-
-def mensagem_telegram():
-    TOKEN = Variable.get("TELEGRAM_DAILY_STATUS_TOKEN")
-    chat_id = Variable.get("TELEGRAM_DAILY_STATUS_ID")
-    data_hoje = datetime.now().strftime('%d-%m-%Y')
-    message = f"EAF-TVRO - Capacidade Instaladoras: Tabela atualizada com sucesso! Informações referentes ao dia {data_hoje}."
-    print(message)
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
-    requests.get(url).json()
 
 default_args = {
     'start_date': datetime(2023, 8, 18, 6, 0, 0),
@@ -197,16 +189,10 @@ tratando_dados = PythonOperator(
     dag=dag
 ) 
 
-mensagem_telegram = PythonOperator(
-    task_id='mensagem_telegram',
-    python_callable=mensagem_telegram,
-    dag=dag
-) 
-
 extrair_ibge_banco = PythonOperator(
     task_id='extrair_ibge_banco',
     python_callable=extrair_ibge_banco,
     dag=dag
 ) 
 
-extrair_dados_api >> extrair_ibge_banco >> tratando_dados >> envio_banco_dados >> mensagem_telegram
+extrair_dados_api >> extrair_ibge_banco >> tratando_dados >> envio_banco_dados
