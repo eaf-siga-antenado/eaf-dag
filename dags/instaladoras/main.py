@@ -112,17 +112,12 @@ def tratando_dados(**kwargs):
     ti = kwargs['ti']
     base_ibge = ti.xcom_pull(task_ids='extrair_ibge_banco')
     base = pd.read_csv('temp.csv')
-    print('O ARQUIVO CHEGOU AQUI:', len(base))
-    print(base.head())
     base.dropna(axis=1, how='all', inplace=True)
-    print('DROPNA')
     base.drop(columns=['IBGE Code on List', 'Fase'], axis=1, inplace=True)
-    print('DROP COLUMNS')
     final_data = []
     maior_numero = max(int(col.split()[-1]) for col in base.columns if col.startswith('Fornecedor '))
 
     for _, row in base.iterrows():
-        print('ENTROU NO FOR')
         uf = row['UF']
         ibge = row['COD_IBGE']
         municipio = row['Município']
@@ -136,27 +131,23 @@ def tratando_dados(**kwargs):
             id_grupo = row[id_grupo_col]
             if fornecedor is not None and not pd.isna(instalacoes):
                 final_data.append([uf, ibge, municipio, instalacoes_prev, fornecedor, instalacoes, id_grupo])
-    print('TERMINOU O LOOP FOR')
     df_final = pd.DataFrame(final_data, columns=['uf', 'ibge', 'municipio', 'total_instalacoes_previstas', 'fornecedor', 'instalacoes_dia', 'id_grupo'])
-    print('FEZ O DATAFRAME')
     df_final['instalacoes_dia'] = df_final['instalacoes_dia'].astype(int)
     df_final['id_grupo'] = df_final['id_grupo'].astype('int64')
     df_final['id_grupo'] = df_final['id_grupo'].astype(str)
     df_final = df_final.merge(base_ibge, how='left', on='ibge')
-    print('FEZ O JOIN')
     # df_final = df_final[df_final['instalacoes_dia'] > 0]
     df_final['InstaladoraIBGE'] = df_final['fornecedor'].str.upper() + df_final['ibge'].astype(str)
     df_final['data_atualizacao'] = date.today().strftime("%d-%m-%Y")
-    print('DEU TUDO CERTO')
-    print('O ARQUIVO CHEGOU AQUI:', len(df_final))
     print(df_final.head(20))
-    print('TIPO DO ARQUIVO:', type(df_final))
-    return base
+    return df_final.to_dict('valores')
 
 def envio_banco_dados(**kwargs):
 
     ti = kwargs['ti']
     subir = ti.xcom_pull(task_ids='tratando_dados')
+    print('tamanho do arquivo:', len(subir))
+    print(subir.head())
 
     server = Variable.get('DBSERVER')
     database = Variable.get('DATABASE')
