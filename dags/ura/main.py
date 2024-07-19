@@ -114,12 +114,14 @@ def extrair_dados_api():
     final = pd.DataFrame()
 
     def fetch_data(page):
-        params['pagina'] = page
-        print(params)
-        response_recursos = requests.post(url_recursos_protegidos, headers=headers, json=params)
-        df = pd.DataFrame(response_recursos.json()['content'])
-        return df
-
+        try:
+            params['pagina'] = page
+            print(params)
+            response_recursos = requests.post(url_recursos_protegidos, headers=headers, json=params)
+            df = pd.DataFrame(response_recursos.json()['content'])
+            return df
+        except:
+            pass
     with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
         dfs = executor.map(fetch_data, range(1, num_paginas+1))
 
