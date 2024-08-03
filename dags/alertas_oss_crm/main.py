@@ -115,4 +115,11 @@ oss_duplicadas = PythonOperator(
     dag=dag
 )
 
-oss_duplicadas 
+verfica_oss_duplicadas = PythonOperator(
+    task_id='verfica_oss_duplicadas',
+    python_callable=verfica_oss_duplicadas,
+    dag=dag
+)
+
+
+oss_duplicadas >> verfica_oss_duplicadas
