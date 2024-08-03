@@ -24,39 +24,37 @@ def oss_duplicadas():
     session = Session()
 
     consulta_sql = '''
-    SELECT 
-        t.[IDdoticket] ,
-        t.Status,
-        t.StatusdaInstalação,
-        t.Horadacriação,
-        t.DataHoraAgendamento,
-        t.B_Nome,
-        t.B_IBGE AS IBGE,
-        g.instaladora AS Instaladora,
-        n.[IDdoticket] AS [Ordem de Serviço],
-        n.Status AS [Status no Novo CRM],
-        n.StatusDaInstalacao as [Status da Instalação no Novo CRM],
-        n.HoraDaCriacao [Criação Novo CRM],
-        n.DataHoraAgendamento AS [DataAgendamento Novo CRM],
-        n.B_Nome as Nome,
-        n.B_IBGE [IBGE Novo CRM],
-        n.Instaladora,
-        t.B_CPF as CPF,
-        i.fase AS Fase
-    FROM [eaf_tvro].[ticket] t
-    JOIN [eaf_tvro].[ticket_novo_crm] n ON t.[B_CPF] = n.[B_CPF]
-    LEFT JOIN [eaf_tvro].[grupo_instaladora] g ON t.[Grupo] = g.[id]
-    LEFT JOIN [eaf_tvro].[ibge] i ON t.[B_IBGE] = i.[cIBGE]
-    WHERE t.[Status] IN ('4', '5')
-    AND t.[MotivodocontatoInstalação] NOT IN (
-        'Cobrança Indevida',
-        'Contestação',
-        'Manutenção',
-        'Manutenção - Problema Técnico',
-        'Manutenção - Técnico Não Compareceu',
-        'Reclamação por problema técnico'
-    )
-    AND t.[StatusdaInstalação] IN ('Instalada')
+        SELECT 
+            t.[IDdoticket] OsFresh,
+            t.StatusdaInstalação StatusInstalacaoFresh,
+            CAST(t.Horadetérminodocompromisso AS DATE) DataInstalacaoFresh,
+            g.instaladora InstaladoraFresh,
+            t.B_NOME NomeFresh,
+            t.B_CPF CPF_Fresh,
+            n.[IDdoticket] OsCRM_EAF,
+            n.Status StatusCRM_EAF,
+            n.StatusDaInstalacao StatusInstalacaoCRM_EAF,
+            n.HoraDaCriacao CriacaoCRM_EAF,
+            n.DataHoraAgendamento DataAgendamentoCRM_EAF,
+            n.B_Nome NomeCRM_EAF,
+            n.B_IBGE IBGE_CRM_EAF,
+            n.Instaladora InstaladoraCRM_EAF,
+            t.B_CPF as CPF_CRM_EAF,
+            i.fase AS FaseCidade
+        FROM [eaf_tvro].[ticket] t
+        JOIN [eaf_tvro].[ticket_novo_crm] n ON t.[B_CPF] = n.[B_CPF]
+        LEFT JOIN [eaf_tvro].[grupo_instaladora] g ON t.[Grupo] = g.[id]
+        LEFT JOIN [eaf_tvro].[ibge] i ON t.[B_IBGE] = i.[cIBGE]
+        WHERE t.[Status] IN ('4', '5')
+        AND t.[MotivodocontatoInstalação] NOT IN (
+            'Cobrança Indevida',
+            'Contestação',
+            'Manutenção',
+            'Manutenção - Problema Técnico',
+            'Manutenção - Técnico Não Compareceu',
+            'Reclamação por problema técnico'
+        )
+        AND t.[StatusdaInstalação] IN ('Instalada')
     '''
     resultado = session.execute(text(consulta_sql))
     df_oss_duplicadas = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
@@ -72,7 +70,7 @@ default_args = {
 dag = DAG(
     'alertas_oss_email',
     default_args=default_args,
-    schedule_interval='*/30 * * * *',
+    schedule_interval= None, #'*/30 * * * *',
     catchup=False
 )
 
