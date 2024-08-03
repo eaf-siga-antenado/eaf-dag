@@ -22,8 +22,8 @@ def oss_duplicadas():
 
     Session = sessionmaker(bind=engine)
     session = Session()
-
-    consulta_sql = '''
+    consulta_sql = 'SELECT * FROM [eaf_tvro].[oss_duplicadas]'
+    """consulta_sql = '''
         SELECT 
             t.[IDdoticket] OsFresh,
             t.StatusdaInstalação StatusInstalacaoFresh,
@@ -56,11 +56,46 @@ def oss_duplicadas():
         )
         AND t.[StatusdaInstalação] IN ('Instalada')
     '''
+    """
     resultado = session.execute(text(consulta_sql))
     df_oss_duplicadas = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
-    print(len(df_oss_duplicadas))
-    print(df_oss_duplicadas.head(10))
+    print('quantidade de tickets duplicados:', len(df_oss_duplicadas))
     return df_oss_duplicadas
+
+def verfica_oss_duplicadas(**kwargs):
+    import pandas as pd
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+
+    ti = kwargs['ti']
+    df_oss_duplicadas = ti.xcom_pull(task_ids='oss_duplicadas')
+    print('quantidade de tickets duplicados:', len(df_oss_duplicadas))
+    print('DEU CERTO!!!')
+    """
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    consulta_sql = 'SELECT * FROM [eaf_tvro].[oss_duplicadas]'
+    resultado = session.execute(text(consulta_sql))
+    df_oss_alertadas = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+
+    # preciso verificar se os dois id's existem na tabela oss_duplicadas
+    if(len(df_oss_duplicadas)) > 0:
+
+
+
+    print(len(df_oss_alertadas))
+    print(df_oss_alertadas.head(10))
+    return df_oss_alertadas
+    """
 
 default_args = {
     'start_date': datetime(2023, 8, 18, 6, 0, 0),
