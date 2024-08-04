@@ -26,6 +26,7 @@ def oss_duplicadas():
         SELECT 
             t.[IDdoticket] OsFresh,
             t.StatusdaInstalação StatusInstalacaoFresh,
+            t.B_IBGE IBGE_Fresh,
             CAST(t.Horadetérminodocompromisso AS DATE) DataInstalacaoFresh,
             g.instaladora InstaladoraFresh,
             t.B_NOME NomeFresh,
@@ -98,11 +99,11 @@ def verfica_oss_duplicadas(**kwargs):
             else:
                 insere_informacao = f"""
                     INSERT INTO eaf_tvro.oss_alertas 
-                    ([OsFresh], [StatusInstalacaoFresh], [DataInstalacaoFresh], [InstaladoraFresh], [NomeFresh], [CPF_Fresh], 
+                    ([OsFresh], [StatusInstalacaoFresh], [IBGE_Fresh], [DataInstalacaoFresh], [InstaladoraFresh], [NomeFresh], [CPF_Fresh], 
                     [OsCRM_EAF], [StatusCRM_EAF], [StatusInstalacaoCRM_EAF], [CriacaoCRM_EAF], [DataAgendamentoCRM_EAF], 
                     [NomeCRM_EAF], [IBGE_CRM_EAF], [InstaladoraCRM_EAF], [CPF_CRM_EAF], [FaseCidade])
                     VALUES 
-                    ('{linha['OsFresh']}', '{linha['StatusInstalacaoFresh']}', '{linha['DataInstalacaoFresh']}', '{linha['InstaladoraFresh']}', 
+                    ('{linha['OsFresh']}', '{linha['StatusInstalacaoFresh']}', '{linha['IBGE_Fresh']}', '{linha['DataInstalacaoFresh']}', '{linha['InstaladoraFresh']}', 
                     '{linha['NomeFresh']}', '{linha['CPF_Fresh']}', '{linha['OsCRM_EAF']}', '{linha['StatusCRM_EAF']}', 
                     '{linha['StatusInstalacaoCRM_EAF']}', '{linha['CriacaoCRM_EAF']}', '{linha['DataAgendamentoCRM_EAF']}', 
                     '{linha['NomeCRM_EAF']}', '{linha['IBGE_CRM_EAF']}', '{linha['InstaladoraCRM_EAF']}', '{linha['CPF_CRM_EAF']}', 
@@ -113,11 +114,11 @@ def verfica_oss_duplicadas(**kwargs):
 
                 insere_informacao = f"""
                     INSERT INTO eaf_tvro.oss_duplicadas 
-                    ([OsFresh], [StatusInstalacaoFresh], [DataInstalacaoFresh], [InstaladoraFresh], [NomeFresh], [CPF_Fresh], 
+                    ([OsFresh], [StatusInstalacaoFresh], [IBGE_Fresh], [DataInstalacaoFresh], [InstaladoraFresh], [NomeFresh], [CPF_Fresh], 
                     [OsCRM_EAF], [StatusCRM_EAF], [StatusInstalacaoCRM_EAF], [CriacaoCRM_EAF], [DataAgendamentoCRM_EAF], 
                     [NomeCRM_EAF], [IBGE_CRM_EAF], [InstaladoraCRM_EAF], [CPF_CRM_EAF], [FaseCidade])
                     VALUES 
-                    ('{linha['OsFresh']}', '{linha['StatusInstalacaoFresh']}', '{linha['DataInstalacaoFresh']}', '{linha['InstaladoraFresh']}', 
+                    ('{linha['OsFresh']}', '{linha['StatusInstalacaoFresh']}', '{linha['IBGE_Fresh']}', '{linha['DataInstalacaoFresh']}', '{linha['InstaladoraFresh']}', 
                     '{linha['NomeFresh']}', '{linha['CPF_Fresh']}', '{linha['OsCRM_EAF']}', '{linha['StatusCRM_EAF']}', 
                     '{linha['StatusInstalacaoCRM_EAF']}', '{linha['CriacaoCRM_EAF']}', '{linha['DataAgendamentoCRM_EAF']}', 
                     '{linha['NomeCRM_EAF']}', '{linha['IBGE_CRM_EAF']}', '{linha['InstaladoraCRM_EAF']}', '{linha['CPF_CRM_EAF']}', 
@@ -130,11 +131,11 @@ def verfica_oss_duplicadas(**kwargs):
         for _, linha in df_oss_duplicadas.iterrows():
             insere_informacao = f"""
                 INSERT INTO eaf_tvro.oss_alertas 
-                ([OsFresh], [StatusInstalacaoFresh], [DataInstalacaoFresh], [InstaladoraFresh], [NomeFresh], [CPF_Fresh], 
+                ([OsFresh], [StatusInstalacaoFresh], [IBGE_Fresh], [DataInstalacaoFresh], [InstaladoraFresh], [NomeFresh], [CPF_Fresh], 
                 [OsCRM_EAF], [StatusCRM_EAF], [StatusInstalacaoCRM_EAF], [CriacaoCRM_EAF], [DataAgendamentoCRM_EAF], 
                 [NomeCRM_EAF], [IBGE_CRM_EAF], [InstaladoraCRM_EAF], [CPF_CRM_EAF], [FaseCidade])
                 VALUES 
-                ('{linha['OsFresh']}', '{linha['StatusInstalacaoFresh']}', '{linha['DataInstalacaoFresh']}', '{linha['InstaladoraFresh']}', 
+                ('{linha['OsFresh']}', '{linha['StatusInstalacaoFresh']}', '{linha['IBGE_Fresh']}', '{linha['DataInstalacaoFresh']}', '{linha['InstaladoraFresh']}', 
                 '{linha['NomeFresh']}', '{linha['CPF_Fresh']}', '{linha['OsCRM_EAF']}', '{linha['StatusCRM_EAF']}', 
                 '{linha['StatusInstalacaoCRM_EAF']}', '{linha['CriacaoCRM_EAF']}', '{linha['DataAgendamentoCRM_EAF']}', 
                 '{linha['NomeCRM_EAF']}', '{linha['IBGE_CRM_EAF']}', '{linha['InstaladoraCRM_EAF']}', '{linha['CPF_CRM_EAF']}', 
@@ -145,11 +146,11 @@ def verfica_oss_duplicadas(**kwargs):
 
             insere_informacao = f"""
                 INSERT INTO eaf_tvro.oss_duplicadas 
-                ([OsFresh], [StatusInstalacaoFresh], [DataInstalacaoFresh], [InstaladoraFresh], [NomeFresh], [CPF_Fresh], 
+                ([OsFresh], [StatusInstalacaoFresh], [IBGE_Fresh], [DataInstalacaoFresh], [InstaladoraFresh], [NomeFresh], [CPF_Fresh], 
                 [OsCRM_EAF], [StatusCRM_EAF], [StatusInstalacaoCRM_EAF], [CriacaoCRM_EAF], [DataAgendamentoCRM_EAF], 
                 [NomeCRM_EAF], [IBGE_CRM_EAF], [InstaladoraCRM_EAF], [CPF_CRM_EAF], [FaseCidade])
                 VALUES 
-                ('{linha['OsFresh']}', '{linha['StatusInstalacaoFresh']}', '{linha['DataInstalacaoFresh']}', '{linha['InstaladoraFresh']}', 
+                ('{linha['OsFresh']}', '{linha['StatusInstalacaoFresh']}', '{linha['IBGE_Fresh']}', '{linha['DataInstalacaoFresh']}', '{linha['InstaladoraFresh']}', 
                 '{linha['NomeFresh']}', '{linha['CPF_Fresh']}', '{linha['OsCRM_EAF']}', '{linha['StatusCRM_EAF']}', 
                 '{linha['StatusInstalacaoCRM_EAF']}', '{linha['CriacaoCRM_EAF']}', '{linha['DataAgendamentoCRM_EAF']}', 
                 '{linha['NomeCRM_EAF']}', '{linha['IBGE_CRM_EAF']}', '{linha['InstaladoraCRM_EAF']}', '{linha['CPF_CRM_EAF']}', 
