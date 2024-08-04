@@ -187,7 +187,7 @@ default_args = {
 dag = DAG(
     'alertas_oss_email',
     default_args=default_args,
-    schedule_interval= None, #'*/30 * * * *',
+    schedule_interval= '0 * * * *',
     catchup=False
 )
 
