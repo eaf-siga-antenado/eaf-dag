@@ -17,13 +17,15 @@ def extrair_dados_api():
     if response.text:
         df = pd.read_csv(StringIO(response.text))
         df['data_atualizacao'] = date.today()
-        
+        print('quantidade de registros:', len(df))
         server = Variable.get('DBSERVER')
         database = Variable.get('DATABASE')
         username = Variable.get('DBUSER')
         password = Variable.get('DBPASSWORD')
         engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
         df.to_sql("email_financeiro", engine, if_exists='append', schema='eaf_tvro', index=False)
+    else:
+        print('não inseriu registros novos')
 
 default_args = {
     'start_date': datetime(2023, 8, 18, 6, 0, 0)
@@ -34,7 +36,7 @@ default_args = {
 dag = DAG(
     'email_financeiro',
     default_args=default_args,
-    schedule_interval='0 12 * * *',
+    schedule_interval='0 11 * * *',
     catchup=False
 )
 
