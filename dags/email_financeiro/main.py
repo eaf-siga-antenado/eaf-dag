@@ -9,10 +9,12 @@ def extrair_dados_api():
     import requests
     import pandas as pd
     from io import StringIO
+    from datetime import date
     from airflow.models import Variable
     from sqlalchemy import create_engine
 
     df = pd.read_csv(StringIO(requests.get('https://api-financial-system-stg.sigaantenado.com.br/financial-system/api/daily-sheet').text))
+    df['data_atualizacao'] = date.today()
     
     server = Variable.get('DBSERVER')
     database = Variable.get('DATABASE')
