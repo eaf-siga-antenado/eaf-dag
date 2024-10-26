@@ -24,37 +24,54 @@ def oss_duplicadas():
     session = Session()
     consulta_sql = '''
         SELECT 
-            t.[IDdoticket] OsFresh,
-            t.StatusdaInstalação StatusInstalacaoFresh,
-            t.B_IBGE IBGE_Fresh,
-            CAST(t.Horadetérminodocompromisso AS DATE) DataInstalacaoFresh,
-            g.instaladora InstaladoraFresh,
-            t.B_NOME NomeFresh,
-            t.B_CPF CPF_Fresh,
-            n.[IDdoticket] OsCRM_EAF,
-            n.Status StatusCRM_EAF,
-            n.StatusDaInstalacao StatusInstalacaoCRM_EAF,
-            n.HoraDaCriacao CriacaoCRM_EAF,
-            n.DataHoraAgendamento DataAgendamentoCRM_EAF,
-            n.B_Nome NomeCRM_EAF,
-            n.B_IBGE IBGE_CRM_EAF,
-            n.Instaladora InstaladoraCRM_EAF,
-            t.B_CPF as CPF_CRM_EAF,
+            t.[IDdoticket] AS OsFresh,
+            t.StatusdaInstalação AS StatusInstalacaoFresh,
+            t.B_IBGE AS IBGE_Fresh,
+            CAST(t.Horadetérminodocompromisso AS DATE) AS DataInstalacaoFresh,
+            g.instaladora AS InstaladoraFresh,
+            t.B_NOME AS NomeFresh,
+            t.B_CPF AS CPF_Fresh,
+            n.service_order_number AS OsCRM_EAF,
+            n.service_order_status AS StatusCRM_EAF,
+            n.installer_response_classification AS StatusInstalacaoCRM_EAF,
+            CAST(n.service_order_created_at AS DATE) AS CriacaoCRM_EAF,
+            CAST(n.schedule_date_time AS DATE) AS DataAgendamentoCRM_EAF,
+            n.customer_name AS NomeCRM_EAF,
+            NULLIF(
+                CASE 
+                    WHEN n.customer_ibge IS NULL OR TRIM(n.customer_ibge) = '' THEN NULLIF(pci.[IBGE], '') 
+                    ELSE n.customer_ibge 
+                END, ''
+            ) AS IBGE_CRM_EAF,
+            n.installer AS InstaladoraCRM_EAF,
+            t.B_CPF AS CPF_CRM_EAF,
             i.fase AS FaseCidade
-        FROM [eaf_tvro].[ticket] t
-        JOIN [eaf_tvro].[ticket_novo_crm] n ON t.[B_CPF] = n.[B_CPF]
-        LEFT JOIN [eaf_tvro].[grupo_instaladora] g ON t.[Grupo] = g.[id]
-        LEFT JOIN [eaf_tvro].[ibge] i ON t.[B_IBGE] = i.[cIBGE]
-        WHERE t.[Status] IN ('4', '5')
-        AND t.[MotivodocontatoInstalação] NOT IN (
-            'Cobrança Indevida',
-            'Contestação',
-            'Manutenção',
-            'Manutenção - Problema Técnico',
-            'Manutenção - Técnico Não Compareceu',
-            'Reclamação por problema técnico'
-        )
-        AND t.[StatusdaInstalação] IN ('Instalada')
+        FROM 
+            [eaf_tvro].[ticket] AS t
+        JOIN 
+            [eaf_tvro].[crm_ticket_data] AS n ON t.[B_CPF] = n.customer_cpf
+        LEFT JOIN 
+            [eaf_tvro].[grupo_instaladora] AS g ON t.[Grupo] = g.[id]
+        LEFT JOIN 
+            [eaf_tvro].[ibge] AS i ON t.[B_IBGE] = i.[cIBGE]
+        LEFT JOIN 
+            [eaf_tvro].[postal_code_ibge] AS pci ON TRIM(REPLACE(n.[customer_postal_code], '-', '')) = TRIM(REPLACE(pci.[postal_code], '-', ''))
+        WHERE 
+            t.[Status] IN ('4', '5')
+            AND t.[MotivodocontatoInstalação] NOT IN (
+                'Cobrança Indevida',
+                'Contestação',
+                'Manutenção',
+                'Manutenção - Problema Técnico',
+                'Manutenção - Técnico Não Compareceu',
+                'Reclamação por problema técnico'
+            )
+            AND t.[StatusdaInstalação] = 'Instalada'
+            AND n.service_order_number LIKE '2025%'
+            AND n.service_order_status NOT IN ('CANCELLED', 'INSTALLED')
+            AND n.customer_cpf NOT IN (
+		        SELECT CPF_CRM_EAF FROM [eaf_tvro].[oss_duplicadas]
+            )
     '''
     resultado = session.execute(text(consulta_sql))
     df_oss_duplicadas = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
@@ -92,6 +109,8 @@ def verfica_oss_duplicadas(**kwargs):
     # preciso verificar se os dois id's que estão na tabela oss_duplicadas, existem no df df_oss_alertadas
     if(len(df_oss_duplicadas)) > 0:
         for _, linha in df_oss_duplicadas.iterrows():
+            if quantidade >= 20:
+                break
             ticket_fresh = linha['OsFresh']
             ticket_eaf = linha['OsCRM_EAF']
             if((df_oss_alertadas['OsFresh'] == ticket_fresh) & (df_oss_alertadas['OsCRM_EAF'] == ticket_eaf)).any():
