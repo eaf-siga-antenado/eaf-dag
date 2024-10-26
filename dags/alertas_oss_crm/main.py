@@ -81,6 +81,7 @@ def oss_duplicadas():
 def verfica_oss_duplicadas(**kwargs):
     import pyodbc
     import pandas as pd
+    from random import randint
     from airflow.models import Variable
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy import create_engine, text
@@ -105,11 +106,12 @@ def verfica_oss_duplicadas(**kwargs):
     resultado = session.execute(text(consulta_sql))
     df_oss_alertadas = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
     quantidade = 0
+    valor_maximo = randint(6, 11)
 
     # preciso verificar se os dois id's que estão na tabela oss_duplicadas, existem no df df_oss_alertadas
     if(len(df_oss_duplicadas)) > 0:
         for _, linha in df_oss_duplicadas.iterrows():
-            if quantidade >= 20:
+            if quantidade >= valor_maximo:
                 break
             ticket_fresh = linha['OsFresh']
             ticket_eaf = linha['OsCRM_EAF']
