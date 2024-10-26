@@ -81,7 +81,13 @@ def extrair_dados_api():
     username = Variable.get('DBUSER')
     password = Variable.get('DBPASSWORD')
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
-    df_groups.to_sql("grupo_instaladora", engine, if_exists='replace', schema='eaf_tvro', index=False)
+
+    delete_query = "DELETE FROM eaf_tvro.grupo_instaladora"
+
+    with engine.connect() as connection:
+        connection.execute(text(delete_query))
+
+    df_groups.to_sql("grupo_instaladora", engine, if_exists='append', schema='eaf_tvro', index=False)
 
 default_args = {
     'start_date': datetime(2023, 8, 18, 5, 0, 0)
