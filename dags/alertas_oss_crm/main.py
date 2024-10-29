@@ -46,16 +46,11 @@ def oss_duplicadas():
             n.installer AS InstaladoraCRM_EAF,
             t.B_CPF AS CPF_CRM_EAF,
             i.fase AS FaseCidade
-        FROM 
-            [eaf_tvro].[ticket] AS t
-        JOIN 
-            [eaf_tvro].[crm_ticket_data] AS n ON t.[B_CPF] = n.customer_cpf
-        LEFT JOIN 
-            [eaf_tvro].[grupo_instaladora] AS g ON t.[Grupo] = g.[id]
-        LEFT JOIN 
-            [eaf_tvro].[ibge] AS i ON t.[B_IBGE] = i.[cIBGE]
-        LEFT JOIN 
-            [eaf_tvro].[postal_code_ibge] AS pci ON TRIM(REPLACE(n.[customer_postal_code], '-', '')) = TRIM(REPLACE(pci.[postal_code], '-', ''))
+        FROM [eaf_tvro].[ticket] AS t
+        JOIN [eaf_tvro].[crm_ticket_data] AS n ON t.[B_CPF] = n.customer_cpf
+        LEFT JOIN [eaf_tvro].[grupo_instaladora] AS g ON t.[Grupo] = g.[id]
+        LEFT JOIN [eaf_tvro].[ibge] AS i ON t.[B_IBGE] = i.[cIBGE]
+        LEFT JOIN [eaf_tvro].[postal_code_ibge] AS pci ON TRIM(REPLACE(n.[customer_postal_code], '-', '')) = TRIM(REPLACE(pci.[postal_code], '-', ''))
         WHERE 
             t.[Status] IN ('4', '5')
             AND t.[MotivodocontatoInstalação] NOT IN (
@@ -68,10 +63,9 @@ def oss_duplicadas():
             )
             AND t.[StatusdaInstalação] = 'Instalada'
             AND n.service_order_number LIKE '2025%'
-            AND n.service_order_status NOT IN ('CANCELLED', 'INSTALLED')
-            AND n.customer_cpf NOT IN (
-		        SELECT CPF_CRM_EAF FROM [eaf_tvro].[oss_duplicadas]
-            )
+            AND n.service_order_status NOT LIKE 'CANCELLED%'
+			AND n.service_order_type IN ('Agendamento de Instalação', 'Agendamento')
+			AND t.IDdoticket <> n.service_order_number
     '''
     resultado = session.execute(text(consulta_sql))
     df_oss_duplicadas = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
