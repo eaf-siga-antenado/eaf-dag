@@ -302,17 +302,23 @@ def new_agendados_semana_atual():
 
     consulta_sql = '''
     SELECT
-        t.IBGE ibge,
-        ibge.domicilios_particulares qtd_domicilios,
-        COUNT(t.IDdoticket) new_agendados_semana_atual
+        t.IBGE AS ibge,
+        ibge.domicilios_particulares AS qtd_domicilios,
+        COUNT(t.IDdoticket) AS new_agendados_semana_atual
     FROM [eaf_tvro].[Freshdesk] t
     LEFT JOIN [eaf_tvro].[ibge]
-    ON t.IBGE = ibge.cIBGE
-    WHERE (CAST(Horadacriação AS DATE) >= CAST(DATEADD(DAY, -9, GETDATE()) AS DATE) AND CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -9, GETDATE())) AS DATE))
-    AND Status = 'IN_PROGRESS' AND DataHoraAgendamento IS NOT NULL AND (StatusdaInstalação <> 'Remarcada Fornecedor' OR StatusdaInstalação IS NULL) AND t.IBGE IS NOT NULL
+    ON TRY_CAST(t.IBGE AS INT) = ibge.cIBGE
+    WHERE 
+        (TRY_CAST(Horadacriação AS DATE) >= CAST(DATEADD(DAY, -9, GETDATE()) AS DATE) 
+        AND TRY_CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -9, GETDATE())) AS DATE))
+        AND Status = 'IN_PROGRESS' 
+        AND TRY_CAST(DataHoraAgendamento AS DATE) IS NOT NULL
+        AND (StatusdaInstalação <> 'Remarcada Fornecedor' OR StatusdaInstalação IS NULL)
+        AND TRY_CAST(t.IBGE AS INT) IS NOT NULL
     GROUP BY
-    t.IBGE,
-    ibge.domicilios_particulares
+        t.IBGE,
+        ibge.domicilios_particulares
+
     '''
     resultado = session.execute(text(consulta_sql))
     new_agendados_semana_atual = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
