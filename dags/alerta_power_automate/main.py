@@ -101,16 +101,20 @@ def instalados():
 
     consulta_sql = '''
     SELECT
-        t.IBGE ibge,
-        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS instalados_semana_anterior,
-        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS instalados_semana_atual
+        t.IBGE AS ibge,
+        SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= TRY_CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS instalados_semana_anterior,
+        SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS instalados_semana_atual
     FROM [eaf_tvro].[Freshdesk] t
     LEFT JOIN [eaf_tvro].[ibge]
     ON t.IBGE = ibge.cIBGE
-    WHERE StatusdaInstalação = 'Instalada' AND Tipo = 'Service Task' AND Status = 'INSTALLED' AND 
-    MotivodocontatoInstalação NOT IN ('Cobrança Indevida', 'Contestação', 'Reclamação por problema técnico', 'Manutenção', 'Manutenção - Problema Técnico', 'Manutenção - Técnico Não Compareceu')
+    WHERE 
+        StatusdaInstalação = 'Instalada' 
+        AND Tipo = 'Service Task' 
+        AND Status = 'INSTALLED' 
+        AND MotivodocontatoInstalação NOT IN ('Cobrança Indevida', 'Contestação', 'Reclamação por problema técnico', 'Manutenção', 'Manutenção - Problema Técnico', 'Manutenção - Técnico Não Compareceu')
     GROUP BY
-    t.IBGE
+        t.IBGE
+
     '''
     resultado = session.execute(text(consulta_sql))
     instalados = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
