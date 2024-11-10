@@ -446,6 +446,7 @@ def nivel_prevencao_funcao(row):
 def cria_colunas_calculadas(**kwargs):
     ti = kwargs['ti']
     df_final = ti.xcom_pull(task_ids='criar_df_final')
+    df_final.fillna(0, inplace = True)
     df_final['variacao_agendamentos_semana'] = df_final.apply(calcular_variacao_agendamentos, axis=1)
     df_final['porcentagem_iba_cadunico_semana_anterior'] = df_final.apply(porcentagem_iba_cadunico_semana_anterior, axis=1)
     df_final['porcentagem_iba_cadunico_semana_atual'] = df_final.apply(porcentagem_iba_cadunico_semana_atual, axis=1)
