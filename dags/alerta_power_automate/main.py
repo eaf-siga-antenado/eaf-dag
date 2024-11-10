@@ -26,18 +26,18 @@ def backlog_futuro():
     consulta_sql = '''
     SELECT
         t.IBGE ibge,
-        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS backlog_futuro_semana_anterior,
-        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS backlog_futuro_semana_atual
-    FROM [eaf_tvro].[ticket_view] t
+        SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= TRY_CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS backlog_futuro_semana_anterior,
+        SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS backlog_futuro_semana_atual
+    FROM [eaf_tvro].[Freshdesk] t
     LEFT JOIN [eaf_tvro].[ibge]
     ON t.IBGE = ibge.cIBGE
     WHERE 
-    Tipo = 'Service Task' 
-    AND Status IN ('2', '7', '8', '10', '11', '12', '13')
-    AND StatusdaInstalação NOT IN ('Remarcada Fornecedor', 'Cancelada') AND LOWER(Assunto) NOT LIKE '%zendesk%'
-    AND CAST(DataHoraAgendamento AS DATE) >= GETDATE()
+        Tipo = 'Service Task' 
+        AND Status = 'IN_PROGRESS'
+        AND StatusdaInstalação IS NULL
+        AND TRY_CAST(DataHoraAgendamento AS DATE) >= CAST(GETDATE() AS DATE)
     GROUP BY
-    t.IBGE
+        t.IBGE
     '''
     resultado = session.execute(text(consulta_sql))
     backlog_futuro = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
@@ -64,18 +64,18 @@ def backlog():
     consulta_sql = '''
     SELECT
         t.IBGE ibge,
-        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS backlog_semana_anterior,
-        SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS backlog_semana_atual
-    FROM [eaf_tvro].[ticket_view] t
+        SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= TRY_CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS backlog_semana_anterior,
+        SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS backlog_semana_atual
+    FROM [eaf_tvro].[Freshdesk] t
     LEFT JOIN [eaf_tvro].[ibge]
     ON t.IBGE = ibge.cIBGE
-    WHERE 
-    Tipo = 'Service Task' 
-    AND Status IN ('2', '7', '8', '10', '11', '12', '13')
-    AND StatusdaInstalação NOT IN ('Remarcada Fornecedor', 'Cancelada') AND LOWER(Assunto) NOT LIKE '%zendesk%'
-    AND CAST(DataHoraAgendamento AS DATE) < GETDATE() AND CAST(DataHoraAgendamento AS DATE) IS NOT NULL
+    WHERE 1 = 1
+        AND Tipo = 'Service Task' 
+        AND Status = 'IN_PROGRESS'
+        AND StatusdaInstalação IS NULL
+        AND TRY_CAST(DataHoraAgendamento AS DATE) < CAST(GETDATE() AS DATE)
     GROUP BY
-    t.IBGE
+        t.IBGE
     '''
     resultado = session.execute(text(consulta_sql))
     backlog = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
@@ -104,12 +104,11 @@ def instalados():
         t.IBGE ibge,
         SUM(CASE WHEN CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS instalados_semana_anterior,
         SUM(CASE WHEN CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS instalados_semana_atual
-    FROM [eaf_tvro].[ticket_view] t
+    FROM [eaf_tvro].[Freshdesk] t
     LEFT JOIN [eaf_tvro].[ibge]
     ON t.IBGE = ibge.cIBGE
-    WHERE StatusdaInstalação = 'Instalada' AND Tipo = 'Service Task' AND Status IN ('4', '5') AND 
+    WHERE StatusdaInstalação = 'Instalada' AND Tipo = 'Service Task' AND Status = 'INSTALLED' AND 
     MotivodocontatoInstalação NOT IN ('Cobrança Indevida', 'Contestação', 'Reclamação por problema técnico', 'Manutenção', 'Manutenção - Problema Técnico', 'Manutenção - Técnico Não Compareceu')
-    AND LOWER(Assunto) NOT LIKE '%zendesk%'
     GROUP BY
     t.IBGE
     '''
@@ -272,8 +271,7 @@ def new_agendados_semana_anterior():
     LEFT JOIN [eaf_tvro].[ibge]
     ON t.IBGE = ibge.cIBGE
     WHERE (CAST(Horadacriação AS DATE) >= CAST(DATEADD(DAY, -16, GETDATE()) AS DATE) AND CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE))
-    AND LOWER(Assunto) NOT LIKE '%zendesk%'
-    AND Status IN ('2', '7', '8', '10', '11', '12', '13') AND DataHoraAgendamento IS NOT NULL AND StatusdaInstalação <> 'Remarcada Fornecedor' AND t.IBGE <> ''
+    AND Status = 'IN_PROGRESS' AND DataHoraAgendamento IS NOT NULL AND (StatusdaInstalação <> 'Remarcada Fornecedor' OR StatusdaInstalação IS NULL) AND t.IBGE <> ''
     GROUP BY
     t.IBGE
     '''
@@ -303,12 +301,11 @@ def new_agendados_semana_atual():
         t.IBGE ibge,
         ibge.domicilios_particulares qtd_domicilios,
         COUNT(t.IDdoticket) new_agendados_semana_atual
-    FROM [eaf_tvro].[ticket_view] t
+    FROM [eaf_tvro].[Freshdesk] t
     LEFT JOIN [eaf_tvro].[ibge]
     ON t.IBGE = ibge.cIBGE
     WHERE (CAST(Horadacriação AS DATE) >= CAST(DATEADD(DAY, -9, GETDATE()) AS DATE) AND CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -9, GETDATE())) AS DATE))
-    AND LOWER(Assunto) NOT LIKE '%zendesk%'
-    AND Status IN ('2', '7', '8', '10', '11', '12', '13') AND DataHoraAgendamento IS NOT NULL AND StatusdaInstalação <> 'Remarcada Fornecedor' AND t.IBGE IS NOT NULL
+    AND Status = 'IN_PROGRESS' AND DataHoraAgendamento IS NOT NULL AND (StatusdaInstalação <> 'Remarcada Fornecedor' OR StatusdaInstalação IS NULL) AND t.IBGE IS NOT NULL
     GROUP BY
     t.IBGE,
     ibge.domicilios_particulares
