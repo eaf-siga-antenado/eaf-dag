@@ -265,7 +265,7 @@ def new_agendados_semana_anterior():
         t.IBGE ibge,
         COUNT(t.IDdoticket) new_agendados_semana_anterior
     FROM [eaf_tvro].[Freshdesk] t
-    WHERE (CAST(Horadacriação AS DATE) >= CAST(DATEADD(DAY, -16, GETDATE()) AS DATE) AND CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE))
+    WHERE (TRY_CAST(Horadacriação AS DATE) >= CAST(DATEADD(DAY, -16, GETDATE()) AS DATE) AND TRY_CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE))
     AND MotivodocontatoInstalação IN ('Agendamento', 'Interferência')
     AND Status NOT IN ('CANCELLED',
     'CANCELLED_NOT_DELIVERED',
