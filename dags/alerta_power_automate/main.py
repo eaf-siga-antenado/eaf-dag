@@ -62,8 +62,8 @@ def backlog():
     consulta_sql = '''
     SELECT
         t.IBGE ibge,
-        SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= TRY_CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS backlog_futuro_semana_anterior,
-        SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS backlog_futuro_semana_atual
+        SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= TRY_CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS backlog_semana_anterior,
+        SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS backlog_semana_atual
     FROM [eaf_tvro].[Freshdesk] t
     WHERE 
         Tipo = 'Service Task' 
