@@ -29,15 +29,13 @@ def backlog_futuro():
         SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= TRY_CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS backlog_futuro_semana_anterior,
         SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS backlog_futuro_semana_atual
     FROM [eaf_tvro].[Freshdesk] t
-    LEFT JOIN [eaf_tvro].[ibge]
-    ON t.IBGE = ibge.cIBGE
     WHERE 
         Tipo = 'Service Task' 
         AND Status = 'IN_PROGRESS'
         AND StatusdaInstalação IS NULL
         AND TRY_CAST(DataHoraAgendamento AS DATE) >= CAST(GETDATE() AS DATE)
     GROUP BY
-        t.IBGE
+    t.IBGE
     '''
     resultado = session.execute(text(consulta_sql))
     backlog_futuro = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
@@ -64,18 +62,16 @@ def backlog():
     consulta_sql = '''
     SELECT
         t.IBGE ibge,
-        SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= TRY_CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS backlog_semana_anterior,
-        SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS backlog_semana_atual
+        SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= TRY_CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS backlog_futuro_semana_anterior,
+        SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS backlog_futuro_semana_atual
     FROM [eaf_tvro].[Freshdesk] t
-    LEFT JOIN [eaf_tvro].[ibge]
-    ON t.IBGE = ibge.cIBGE
-    WHERE 1 = 1
-        AND Tipo = 'Service Task' 
+    WHERE 
+        Tipo = 'Service Task' 
         AND Status = 'IN_PROGRESS'
         AND StatusdaInstalação IS NULL
         AND TRY_CAST(DataHoraAgendamento AS DATE) < CAST(GETDATE() AS DATE)
     GROUP BY
-        t.IBGE
+    t.IBGE
     '''
     resultado = session.execute(text(consulta_sql))
     backlog = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
@@ -105,16 +101,13 @@ def instalados():
         SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= TRY_CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE) THEN 1 ELSE 0 END) AS instalados_semana_anterior,
         SUM(CASE WHEN TRY_CAST(Horadacriação AS DATE) <= GETDATE() THEN 1 ELSE 0 END) AS instalados_semana_atual
     FROM [eaf_tvro].[Freshdesk] t
-    LEFT JOIN [eaf_tvro].[ibge]
-    ON t.IBGE = ibge.cIBGE
     WHERE 
         StatusdaInstalação = 'Instalada' 
         AND Tipo = 'Service Task' 
         AND Status = 'INSTALLED' 
-        AND MotivodocontatoInstalação NOT IN ('Cobrança Indevida', 'Contestação', 'Reclamação por problema técnico', 'Manutenção', 'Manutenção - Problema Técnico', 'Manutenção - Técnico Não Compareceu')
+        AND MotivodocontatoInstalação IN ('Agendamento', 'Interferência')
     GROUP BY
         t.IBGE
-
     '''
     resultado = session.execute(text(consulta_sql))
     instalados = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
@@ -271,11 +264,13 @@ def new_agendados_semana_anterior():
     SELECT
         t.IBGE ibge,
         COUNT(t.IDdoticket) new_agendados_semana_anterior
-    FROM [eaf_tvro].[ticket_view] t
-    LEFT JOIN [eaf_tvro].[ibge]
-    ON t.IBGE = ibge.cIBGE
+    FROM [eaf_tvro].[Freshdesk] t
     WHERE (CAST(Horadacriação AS DATE) >= CAST(DATEADD(DAY, -16, GETDATE()) AS DATE) AND CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE))
-    AND Status = 'IN_PROGRESS' AND DataHoraAgendamento IS NOT NULL AND (StatusdaInstalação <> 'Remarcada Fornecedor' OR StatusdaInstalação IS NULL) AND t.IBGE <> ''
+    AND MotivodocontatoInstalação IN ('Agendamento', 'Interferência')
+    AND Status NOT IN ('CANCELLED',
+    'CANCELLED_NOT_DELIVERED',
+    'INSTALLER_INTEGRATION_ERROR',
+    'VALIDATION') AND DataHoraAgendamento IS NOT NULL AND t.IBGE <> ''
     GROUP BY
     t.IBGE
     '''
@@ -311,14 +306,14 @@ def new_agendados_semana_atual():
     WHERE 
         (TRY_CAST(Horadacriação AS DATE) >= CAST(DATEADD(DAY, -9, GETDATE()) AS DATE) 
         AND TRY_CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -9, GETDATE())) AS DATE))
-        AND Status = 'IN_PROGRESS' 
-        AND TRY_CAST(DataHoraAgendamento AS DATE) IS NOT NULL
-        AND (StatusdaInstalação <> 'Remarcada Fornecedor' OR StatusdaInstalação IS NULL)
-        AND TRY_CAST(t.IBGE AS INT) IS NOT NULL
-    GROUP BY
+        AND MotivodocontatoInstalação IN ('Agendamento', 'Interferência')
+        AND Status NOT IN ('CANCELLED',
+        'CANCELLED_NOT_DELIVERED',
+        'INSTALLER_INTEGRATION_ERROR',
+        'VALIDATION') AND DataHoraAgendamento IS NOT NULL AND t.IBGE <> ''
+        GROUP BY
         t.IBGE,
         ibge.domicilios_particulares
-
     '''
     resultado = session.execute(text(consulta_sql))
     new_agendados_semana_atual = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
