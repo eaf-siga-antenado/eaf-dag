@@ -23,7 +23,7 @@ def extrair_dados():
     #     'host': Variable.get('host'),
     #     'port': Variable.get('port')
     # }
-
+    print('antes de fazer a leitura dos dados da conexão')
     conn_params = {
         'dbname': 'crm_prod',
         'user': 'crm_app',
@@ -31,27 +31,29 @@ def extrair_dados():
         'host': 'crm-prod.postgres.database.azure.com',
         'port': '5432'
     }
+    try:
+        conn = psycopg2.connect(**conn_params)
+        cursor = conn.cursor()
 
-    conn = psycopg2.connect(**conn_params)
-    cursor = conn.cursor()
-
-    query = """
-    SELECT
-        installer."name" AS Instaladora,
-        CAST(capacity AS VARCHAR) as Instalacoes_dia,
-        ibge.city_code ibge
-    FROM public.setup setup
-    left join public.installer installer
-    on setup.id_installer  = installer.id
-    left join public.city_ibge ibge on
-    ibge.id = setup.id_city
-    """
-    cursor.execute(query)
-    colunas = [desc[0] for desc in cursor.description]
-    resultados = cursor.fetchall()
-    df = pd.DataFrame(resultados, columns=colunas)
-    print(len(df))
-    df.head(10)
+        query = """
+        SELECT
+            installer."name" AS Instaladora,
+            CAST(capacity AS VARCHAR) as Instalacoes_dia,
+            ibge.city_code ibge
+        FROM public.setup setup
+        left join public.installer installer
+        on setup.id_installer  = installer.id
+        left join public.city_ibge ibge on
+        ibge.id = setup.id_city
+        """
+        cursor.execute(query)
+        colunas = [desc[0] for desc in cursor.description]
+        resultados = cursor.fetchall()
+        df = pd.DataFrame(resultados, columns=colunas)
+        print(len(df))
+        df.head(10)
+    except psycopg2.OperationalError as e:
+        print("Erro ao conectar:", e)
 
 def enviar_mensagem():
     import requests
