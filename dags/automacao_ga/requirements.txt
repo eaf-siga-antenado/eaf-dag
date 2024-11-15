@@ -1,6 +1,0 @@
-google-analytics-data==0.17.1
-numpy
-pandas
-pyodbc
-SQLAlchemy
-unidecode
