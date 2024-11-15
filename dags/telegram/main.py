@@ -15,7 +15,7 @@ def extrair_dados():
     'user': Variable.get('user'),
     'password': Variable.get('password'),
     'host': Variable.get('host'),
-    'port': Variable.get('porte')
+    'port': Variable.get('port')
 }
 
     conn = psycopg2.connect(**conn_params)
