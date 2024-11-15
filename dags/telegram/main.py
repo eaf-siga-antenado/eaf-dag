@@ -3,7 +3,7 @@ from airflow.models import Variable
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python_operator import PythonOperator, PythonVirtualenvOperator
 
 def extrair_dados():
     import psycopg2
@@ -80,10 +80,11 @@ dag = DAG(
 #     dag=dag
 # )
 
-extrair_dados = PythonOperator(
+extrair_dados = PythonVirtualenvOperator(
     task_id='extrair_dados',
     python_callable=extrair_dados,
-    dag=dag
+    dag=dag,
+    requirements = ['psycopg2']
 )
 
 extrair_dados 
