@@ -31,6 +31,7 @@ def extrair_dados():
         'host': 'crm-prod.postgres.database.azure.com',
         'port': '5432'
     }
+    print(conn_params)
     try:
         conn = psycopg2.connect(**conn_params)
         cursor = conn.cursor()
