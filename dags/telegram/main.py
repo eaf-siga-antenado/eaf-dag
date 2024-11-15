@@ -10,6 +10,12 @@ def extrair_dados():
     import pandas as pd
     from airflow.models import Variable
 
+    print('dbname:', Variable.get('dbname'))
+    print('user:', Variable.get('user'))
+    print('password:', Variable.get('password'))
+    print('host:', Variable.get('host'))
+    print('port:', Variable.get('port'))
+
     conn_params = {
     'dbname': Variable.get('dbname'),
     'user': Variable.get('user'),
@@ -60,11 +66,11 @@ dag = DAG(
     catchup=False
 )
 
-enviar_mensagem = PythonOperator(
-    task_id='extrairasa_dados',
-    python_callable=enviar_mensagem,
-    dag=dag
-)
+# enviar_mensagem = PythonOperator(
+#     task_id='extrairasa_dados',
+#     python_callable=enviar_mensagem,
+#     dag=dag
+# )
 
 extrair_dados = PythonOperator(
     task_id='extrair_dados',
