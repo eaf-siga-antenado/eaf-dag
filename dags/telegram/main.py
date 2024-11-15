@@ -10,19 +10,27 @@ def extrair_dados():
     import pandas as pd
     from airflow.models import Variable
 
-    print('dbname:', Variable.get('dbname'))
-    print('user:', Variable.get('user'))
-    print('password:', Variable.get('password'))
-    print('host:', Variable.get('host'))
-    print('port:', Variable.get('port'))
+    # print('dbname:', Variable.get('dbname'))
+    # print('user:', Variable.get('user'))
+    # print('password:', Variable.get('password'))
+    # print('host:', Variable.get('host'))
+    # print('port:', Variable.get('port'))
+
+    # conn_params = {
+    #     'dbname': Variable.get('dbname'),
+    #     'user': Variable.get('user'),
+    #     'password': Variable.get('password'),
+    #     'host': Variable.get('host'),
+    #     'port': Variable.get('port')
+    # }
 
     conn_params = {
-    'dbname': Variable.get('dbname'),
-    'user': Variable.get('user'),
-    'password': Variable.get('password'),
-    'host': Variable.get('host'),
-    'port': Variable.get('port')
-}
+        'dbname': 'crm_prod',
+        'user': 'crm_app',
+        'password': 'cYw0ypkHRE4s3she',
+        'host': 'crm-prod.postgres.database.azure.com',
+        'port': '5432'
+    }
 
     conn = psycopg2.connect(**conn_params)
     cursor = conn.cursor()
