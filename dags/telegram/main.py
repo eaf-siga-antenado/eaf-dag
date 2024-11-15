@@ -84,7 +84,7 @@ extrair_dados = PythonVirtualenvOperator(
     task_id='extrair_dados',
     python_callable=extrair_dados,
     dag=dag,
-    requirements = ['psycopg2']
+    requirements = ['psycopg2-binary']
 )
 
 extrair_dados 
