@@ -79,7 +79,7 @@ dag = DAG(
 #     dag=dag
 # )
 
-extrair_dados = PythonVirtualenvOperator(
+extrair_dados = PythonOperator(
     task_id='extrair_dados',
     python_callable=extrair_dados,
     dag=dag,
