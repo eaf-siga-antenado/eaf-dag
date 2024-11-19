@@ -46,8 +46,9 @@ def extrair_dados():
         colunas = [desc[0] for desc in cursor.description]
         resultados = cursor.fetchall()
         df = pd.DataFrame(resultados, columns=colunas)
+        print('tamanho do df:')
         print(len(df))
-        df.head(10)
+        print(df.head(10))
     except psycopg2.OperationalError as e:
         print("Erro ao conectar:", e)
 
