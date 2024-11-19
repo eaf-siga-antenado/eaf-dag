@@ -82,8 +82,8 @@ dag = DAG(
 extrair_dados = PythonOperator(
     task_id='extrair_dados',
     python_callable=extrair_dados,
-    dag=dag,
-    requirements = ['psycopg2-binary']
+    dag=dag
+    # requirements = ['psycopg2-binary']
 )
 
 extrair_dados 
