@@ -457,6 +457,9 @@ def cria_colunas_calculadas(**kwargs):
     
     # filtrando informações que serão alertadas
     # df_final = df_final[((df_final['calculo_prevencao'] == 'Comunicado - Verde') & (df_final['curva'] !='Crescente')) | (df_final['nivel_calculo_prevencao'] >= 2)]
+    print('dados antes do filtro >= 2')
+    print(len(df_final))
+    print(df_final.head())
     df_final = df_final[df_final['nivel_calculo_prevencao'] >= 2]
     print('tamanho do df_final', len(df_final))
     print('as colunas que temos são as seguintes:')
