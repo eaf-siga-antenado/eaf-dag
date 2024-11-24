@@ -265,7 +265,7 @@ def new_agendados_semana_anterior():
         t.IBGE ibge,
         COUNT(t.IDdoticket) new_agendados_semana_anterior
     FROM [eaf_tvro].[Freshdesk] t
-    WHERE (TRY_CAST(Horadacriação AS DATE) >= CAST(DATEADD(DAY, -16, GETDATE()) AS DATE) AND TRY_CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE))
+    WHERE (TRY_CAST(FORMAT(TRY_CONVERT(DATE, Horadacriação, 105), 'yyyy-MM-dd') AS DATE) >= CAST(DATEADD(DAY, -16, GETDATE()) AS DATE) AND TRY_CAST(FORMAT(TRY_CONVERT(DATE, Horadacriação, 105), 'yyyy-MM-dd') AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -16, GETDATE())) AS DATE))
     AND MotivodocontatoInstalação IN ('Agendamento', 'Interferência')
     AND Status NOT IN ('CANCELLED',
     'CANCELLED_NOT_DELIVERED',
@@ -296,21 +296,21 @@ def new_agendados_semana_atual():
     session = Session()
 
     consulta_sql = '''
-    SELECT
+        SELECT
         t.IBGE AS ibge,
         ibge.domicilios_particulares AS qtd_domicilios,
         COUNT(t.IDdoticket) AS new_agendados_semana_atual
     FROM [eaf_tvro].[Freshdesk] t
     LEFT JOIN [eaf_tvro].[ibge]
-    ON TRY_CAST(t.IBGE AS INT) = ibge.cIBGE
+    ON t.IBGE = ibge.cIBGE
     WHERE 
-        (TRY_CAST(Horadacriação AS DATE) >= CAST(DATEADD(DAY, -9, GETDATE()) AS DATE) 
-        AND TRY_CAST(Horadacriação AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -9, GETDATE())) AS DATE))
+        (TRY_CAST(FORMAT(TRY_CONVERT(DATE, Horadacriação, 105), 'yyyy-MM-dd') AS DATE) >= CAST(DATEADD(DAY, -9, GETDATE()) AS DATE) 
+        AND TRY_CAST(FORMAT(TRY_CONVERT(DATE, Horadacriação, 105), 'yyyy-MM-dd') AS DATE) <= CAST(DATEADD(DAY, 6, DATEADD(DAY, -9, GETDATE())) AS DATE))
         AND MotivodocontatoInstalação IN ('Agendamento', 'Interferência')
         AND Status NOT IN ('CANCELLED',
         'CANCELLED_NOT_DELIVERED',
         'INSTALLER_INTEGRATION_ERROR',
-        'VALIDATION') AND DataHoraAgendamento IS NOT NULL AND t.IBGE <> ''
+        'VALIDATION') AND DataHoraAgendamento IS NOT NULL
         GROUP BY
         t.IBGE,
         ibge.domicilios_particulares
@@ -461,6 +461,7 @@ def cria_colunas_calculadas(**kwargs):
     print(len(df_final))
     print(df_final.head())
     df_final = df_final[df_final['nivel_calculo_prevencao'] >= 2]
+    print('depois do filtro')
     print('tamanho do df_final', len(df_final))
     print('as colunas que temos são as seguintes:')
     print(df_final.columns)
