@@ -36,9 +36,7 @@ def extrair_dados_postgres():
     colunas = [desc[0] for desc in cursor.description]
     resultados = cursor.fetchall()
     df = pd.DataFrame(resultados, columns=colunas)
-    print('tamanho do df:')
-    print(len(df))
-    print(df.head(10))
+    return df
 
 def extrair_dados_sql_server():
     import pandas as pd
@@ -70,7 +68,11 @@ def tratamentos_envio_banco(**kwargs):
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
     ti = kwargs['ti']
     df = ti.xcom_pull(task_ids='extrair_dados_postgres')
+    print(f'tamanho do df:', len(df))
+    print(df.head())
     setup = ti.xcom_pull(task_ids='extrair_dados_sql_server')
+    print(f'tamanho do setup:', len(setup))
+    print(setup.head())
     df = df[~df['concat'].isin(setup['concat'])]
     quantidade_registros = len(df)
     if quantidade_registros > 0:
