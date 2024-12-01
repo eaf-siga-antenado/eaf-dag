@@ -8,6 +8,7 @@ from airflow.operators.python_operator import PythonOperator, PythonVirtualenvOp
 def extrair_dados_postgres():
     import psycopg2
     import pandas as pd
+    from datetime import date
     from airflow.models import Variable
 
     conn_params = {
@@ -36,6 +37,9 @@ def extrair_dados_postgres():
     colunas = [desc[0] for desc in cursor.description]
     resultados = cursor.fetchall()
     df = pd.DataFrame(resultados, columns=colunas)
+    df = df[['ibge', 'instaladora', 'instalacoes_dia']]
+    df['concat'] = df['ibge'] + df['instaladora'] + df['instalacoes_dia']
+    df['data_informacao'] = date.today()
     return df
 
 def extrair_dados_sql_server():
