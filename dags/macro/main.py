@@ -11,7 +11,7 @@ def extrair_dados_api():
     from io import StringIO
     from datetime import date
     from airflow.models import Variable
-    from sqlalchemy import create_engine
+    from sqlalchemy import create_engine, text
 
     menos_30dias = (date.today() + timedelta(days=-30)).strftime('%Y-%m-%d')
     ontem = (date.today() + timedelta(days=-1)).strftime('%Y-%m-%d')
