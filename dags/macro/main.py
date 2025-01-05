@@ -13,9 +13,11 @@ def extrair_dados_api():
     from airflow.models import Variable
     from sqlalchemy import create_engine
 
+    menos_30dias = (date.today() + timedelta(days=-30)).strftime('%Y-%m-%d')
     ontem = (date.today() + timedelta(days=-1)).strftime('%Y-%m-%d')
-    uri_ativo = f"/metrics/active-identity/D?startDate={ontem}T00%3A00%3A00.000Z&endDate={ontem}T00%3A00%3A00.000Z"
-    uri_engajado = f"/metrics/engaged-identity/D?startDate={ontem}T00%3A00%3A00.000Z&endDate={ontem}T00%3A00%3A00.000Z"
+
+    uri_ativo = f"/metrics/active-identity/D?startDate={menos_30dias}T00%3A00%3A00.000Z&endDate={ontem}T00%3A00%3A00.000Z"
+    uri_engajado = f"/metrics/engaged-identity/D?startDate={menos_30dias}T00%3A00%3A00.000Z&endDate={ontem}T00%3A00%3A00.000Z"
     
     url = 'https://macro.http.msging.net/commands'
     headers = {
@@ -74,6 +76,13 @@ def extrair_dados_api():
     username = Variable.get('DBUSER')
     password = Variable.get('DBPASSWORD')
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+    
+    query = text(f"DELETE FROM [eaf_tvro].[macro_whatsapp] WHERE data >= '{menos_30dias}'")
+    with engine.connect() as conn:
+        conn.execute(query)
+        conn.commit()
+
+
     df_final.to_sql("macro_whatsapp", engine, if_exists='append', schema='eaf_tvro', index=False)
     
 
