@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, text
 from airflow.operators.python_operator import PythonOperator
 
 def extrair_dados_api():
+    import pyodbc
     import requests
     import pandas as pd
     from io import StringIO
@@ -76,16 +77,13 @@ def extrair_dados_api():
     username = Variable.get('DBUSER')
     password = Variable.get('DBPASSWORD')
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
-    
-    query = text(f"DELETE FROM [eaf_tvro].[macro_whatsapp] WHERE data >= '{menos_30dias}'")
-    with engine.connect() as conn:
-        conn.execute(query)
-        conn.commit()
-
+    conn = pyodbc.connect(f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
+    cursor = conn.cursor()
+    cursor.execute(f"DELETE FROM [eaf_tvro].[macro_whatsapp] WHERE data >= '{menos_30dias}'")
+    cursor.commit()
 
     df_final.to_sql("macro_whatsapp", engine, if_exists='append', schema='eaf_tvro', index=False)
     
-
 default_args = {
     'start_date': datetime(2023, 8, 18, 6, 0, 0)
 }
