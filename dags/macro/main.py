@@ -14,11 +14,11 @@ def extrair_dados_api():
     from airflow.models import Variable
     from sqlalchemy import create_engine, text
 
-    menos10dias = (date.today() + timedelta(days=-10)).strftime('%Y-%m-%d')
+    menos2dias = (date.today() + timedelta(days=-2)).strftime('%Y-%m-%d')
     ontem = (date.today() + timedelta(days=-1)).strftime('%Y-%m-%d')
 
-    uri_ativo = f"/metrics/active-identity/D?startDate={menos10dias}T00%3A00%3A00.000Z&endDate={ontem}T00%3A00%3A00.000Z"
-    uri_engajado = f"/metrics/engaged-identity/D?startDate={menos10dias}T00%3A00%3A00.000Z&endDate={ontem}T00%3A00%3A00.000Z"
+    uri_ativo = f"/metrics/active-identity/D?startDate={menos2dias}T00%3A00%3A00.000Z&endDate={ontem}T00%3A00%3A00.000Z"
+    uri_engajado = f"/metrics/engaged-identity/D?startDate={menos2dias}T00%3A00%3A00.000Z&endDate={ontem}T00%3A00%3A00.000Z"
     
     url = 'https://macro.http.msging.net/commands'
     headers = {
@@ -79,7 +79,7 @@ def extrair_dados_api():
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
     conn = pyodbc.connect(f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}")
     cursor = conn.cursor()
-    cursor.execute(f"DELETE FROM [eaf_tvro].[macro_whatsapp] WHERE data >= '{menos10dias}'")
+    cursor.execute(f"DELETE FROM [eaf_tvro].[macro_whatsapp] WHERE data >= '{menos2dias}'")
     cursor.commit()
 
     df_final.to_sql("macro_whatsapp", engine, if_exists='append', schema='eaf_tvro', index=False)
