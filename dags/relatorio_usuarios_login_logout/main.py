@@ -9,33 +9,24 @@ EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE")
 SENHA_EMAIL = os.getenv("SENHA_EMAIL")
 
 
-def enviar_email_com_csv(
-    caminho_csv,
-    destinatarios,
-    assunto="Relatório CSV",
-    corpo="Segue em anexo o relatório.",
-):
+def enviar_email_com_csv(caminho_csv, destinatarios, assunto="Relatório CSV", corpo="Segue em anexo o relatório."):
     try:
-        # Criar a mensagem de e-mail
+        # Criação da mensagem
         msg = EmailMessage()
         msg["Subject"] = assunto
         msg["From"] = EMAIL_REMETENTE
         msg["To"] = ", ".join(destinatarios)
         msg.set_content(corpo)
 
-        # Anexar o CSV
+        # Anexa o CSV
         with open(caminho_csv, "rb") as f:
             conteudo = f.read()
             nome_arquivo = os.path.basename(caminho_csv)
-            msg.add_attachment(
-                conteudo,
-                maintype="application",
-                subtype="octet-stream",
-                filename=nome_arquivo,
-            )
+            msg.add_attachment(conteudo, maintype="application", subtype="octet-stream", filename=nome_arquivo)
 
-        # Enviar e-mail via SMTP (Gmail como exemplo)
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        # Envio via STARTTLS
+        with smtplib.SMTP("smtp.office365.com", 587) as smtp:
+            smtp.starttls()
             smtp.login(EMAIL_REMETENTE, SENHA_EMAIL)
             smtp.send_message(msg)
 
@@ -110,14 +101,14 @@ def gerar_relatorio_login_logout(output_file, data):
     return output_file
 
 
-if __name__ == "__main__":
+def main():
     data = (datetime.now() - timedelta(days=1)).date()
-    output_file = f"reports/relatorio_login_logout_{data.strftime('%d-%m-%Y')}.csv"
+    output_file = f"relatorio_login_logout_{data.strftime('%d-%m-%Y')}.csv"
     gerar_relatorio_login_logout(output_file, data)
     enviar_email_com_csv(
         output_file,
         [
             "marcelo.ferreira.terceirizado@eaf.org.br",
-            "felipe.silva.terceirizado@eaf.org.br",
+            # "felipe.silva.terceirizado@eaf.org.br",
         ],
     )
