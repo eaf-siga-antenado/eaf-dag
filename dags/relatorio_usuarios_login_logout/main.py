@@ -9,28 +9,22 @@ from airflow.models import Variable
 from airflow.operators.python_operator import PythonVirtualenvOperator
 
 
-MONGO_CONNECTION_STR = Variable.get("MONGO_CONNECTION_STR_EAF_PRD")
-EMAIL_REMETENTE = Variable.get("EMAIL_REMETENTE_RELATORIO")
-SENHA_EMAIL = Variable.get("SENHA_EMAIL_RELATORIO")
-
 default_args = {}
 dag = DAG(
     "relatorio_usuarios_login_logout",
     default_args=default_args,
     schedule_interval="0 1 * * *",  # Executa diariamente às 1h da manhã
     catchup=False,
-    start_date=datetime(2025, 5, 21), 
+    start_date=datetime(2025, 5, 21),
 )
-
-
-
-
 
 
 def main():
     from datetime import datetime, timedelta
+
     data = (datetime.now() - timedelta(days=1)).date()
     output_file = f"relatorio_login_logout_{data.strftime('%d-%m-%Y')}.csv"
+
     def enviar_email_com_csv(
         caminho_csv,
         destinatarios,
@@ -39,6 +33,9 @@ def main():
     ):
         import smtplib
         from email.message import EmailMessage
+
+        EMAIL_REMETENTE = Variable.get("EMAIL_REMETENTE_RELATORIO")
+        SENHA_EMAIL = Variable.get("SENHA_EMAIL_RELATORIO")
         try:
             # Criação da mensagem
             msg = EmailMessage()
@@ -67,9 +64,12 @@ def main():
             print("✅ E-mail enviado com sucesso!")
         except Exception as e:
             print(f"❌ Erro ao enviar e-mail: {e}")
+
     def gerar_relatorio_login_logout(output_file, data):
         from datetime import datetime, timedelta
         from pymongo import MongoClient
+
+        MONGO_CONNECTION_STR = Variable.get("MONGO_CONNECTION_STR_EAF_PRD")
 
         # Definir a data como o dia anterior à execução (1h da manhã)
         dia_seguinte = data + timedelta(days=1)
@@ -132,6 +132,7 @@ def main():
         client.close()
         print(f"\u2705 Relatório salvo em: {output_file}")
         return output_file
+
     gerar_relatorio_login_logout(output_file, data)
     enviar_email_com_csv(
         output_file,
