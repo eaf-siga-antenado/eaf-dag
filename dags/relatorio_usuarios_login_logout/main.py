@@ -15,6 +15,7 @@ dag = DAG(
     default_args=default_args,
     schedule_interval="0 1 * * *",  # Executa diariamente às 1h da manhã
     catchup=False,
+    system_site_packages=True,
     start_date=datetime(2025, 5, 21),
 )
 
