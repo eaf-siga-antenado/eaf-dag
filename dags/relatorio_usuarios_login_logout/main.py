@@ -7,7 +7,6 @@ from email.message import EmailMessage
 from airflow import DAG
 from airflow.models import Variable
 from airflow.operators.python_operator import PythonVirtualenvOperator
-from pymongo import MongoClient
 
 
 MONGO_CONNECTION_STR = Variable.get("MONGO_CONNECTION_STR_EAF_PRD")
@@ -60,6 +59,7 @@ def enviar_email_com_csv(
 
 
 def gerar_relatorio_login_logout(output_file, data):
+    from pymongo import MongoClient
 
     # Definir a data como o dia anterior à execução (1h da manhã)
     dia_seguinte = data + timedelta(days=1)
@@ -132,14 +132,17 @@ def main():
         output_file,
         [
             "marcelo.ferreira.terceirizado@eaf.org.br",
-            # "felipe.silva.terceirizado@eaf.org.br",
+            "felipe.silva.terceirizado@eaf.org.br",
         ],
     )
 
 
 relatorio_usuarios_login_logout = PythonVirtualenvOperator(
-    task_id="relatorio_usuarios_login_logout", python_callable=main, dag=dag,
-    requirements="pymongo",
+    task_id="relatorio_usuarios_login_logout",
+    python_callable=main,
+    requirements=["pymongo==4.13.0"],
+    system_site_packages=False,
+    dag=dag,
 )
 
 relatorio_usuarios_login_logout
