@@ -6,7 +6,7 @@ from email.message import EmailMessage
 
 from airflow import DAG
 from airflow.models import Variable
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python_operator import PythonVirtualenvOperator
 from pymongo import MongoClient
 
 
@@ -137,8 +137,11 @@ def main():
     )
 
 
-relatorio_usuarios_login_logout = PythonOperator(
-    task_id="relatorio_usuarios_login_logout", python_callable=main, dag=dag
+relatorio_usuarios_login_logout = PythonVirtualenvOperator(
+    task_id="relatorio_usuarios_login_logout", python_callable=main, dag=dag,
+    requirements=[
+        "pymongo==4.10.1",
+    ],
 )
 
 relatorio_usuarios_login_logout
