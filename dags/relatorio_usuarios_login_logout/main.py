@@ -4,6 +4,7 @@ import smtplib
 from datetime import datetime, timedelta
 from email.message import EmailMessage
 
+from airflow.models import Variable
 from airflow import DAG
 from airflow.operators.python_operator import PythonVirtualenvOperator
 
@@ -20,7 +21,6 @@ dag = DAG(
 
 def main():
     from datetime import datetime, timedelta
-    from airflow.models import Variable
 
     data = (datetime.now() - timedelta(days=1)).date()
     output_file = f"relatorio_login_logout_{data.strftime('%d-%m-%Y')}.csv"
@@ -33,6 +33,7 @@ def main():
     ):
         import smtplib
         from email.message import EmailMessage
+        from airflow.models import Variable
 
         EMAIL_REMETENTE = Variable.get("EMAIL_REMETENTE_RELATORIO")
         SENHA_EMAIL = Variable.get("SENHA_EMAIL_RELATORIO")
@@ -68,6 +69,7 @@ def main():
     def gerar_relatorio_login_logout(output_file, data):
         from datetime import datetime, timedelta
         from pymongo import MongoClient
+        from airflow.models import Variable
 
         MONGO_CONNECTION_STR = Variable.get("MONGO_CONNECTION_STR_EAF_PRD")
 
