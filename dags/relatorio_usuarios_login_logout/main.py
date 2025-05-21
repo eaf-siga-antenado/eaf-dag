@@ -15,7 +15,6 @@ dag = DAG(
     default_args=default_args,
     schedule_interval="0 1 * * *",  # Executa diariamente às 1h da manhã
     catchup=False,
-    system_site_packages=True,
     start_date=datetime(2025, 5, 21),
 )
 
@@ -150,7 +149,7 @@ relatorio_usuarios_login_logout = PythonVirtualenvOperator(
     task_id="relatorio_usuarios_login_logout",
     python_callable=main,
     requirements=["pymongo==4.10.1"],
-    system_site_packages=False,
+    system_site_packages=True,
     dag=dag,
 )
 
