@@ -1,15 +1,34 @@
-import os
 import csv
-from pymongo import MongoClient
+import os
 import smtplib
-from email.message import EmailMessage
 from datetime import datetime, timedelta
+from email.message import EmailMessage
 
-EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE")
-SENHA_EMAIL = os.getenv("SENHA_EMAIL")
+from airflow import DAG
+from airflow.models import Variable
+from airflow.operators.python_operator import PythonOperator
+from pymongo import MongoClient
 
 
-def enviar_email_com_csv(caminho_csv, destinatarios, assunto="Relatório CSV", corpo="Segue em anexo o relatório."):
+MONGO_CONNECTION_STR = Variable.get("MONGO_CONNECTION_STR_EAF_PRD")
+EMAIL_REMETENTE = Variable.get("EMAIL_REMETENTE_RELATORIO")
+SENHA_EMAIL = Variable.get("SENHA_EMAIL_RELATORIO")
+
+default_args = {}
+dag = DAG(
+    "relatorio_usuarios_login_logout",
+    default_args=default_args,
+    schedule_interval="0 1 * * *",  # Executa diariamente às 1h da manhã
+    catchup=False,
+)
+
+
+def enviar_email_com_csv(
+    caminho_csv,
+    destinatarios,
+    assunto="Relatório CSV",
+    corpo="Segue em anexo o relatório.",
+):
     try:
         # Criação da mensagem
         msg = EmailMessage()
@@ -22,7 +41,12 @@ def enviar_email_com_csv(caminho_csv, destinatarios, assunto="Relatório CSV", c
         with open(caminho_csv, "rb") as f:
             conteudo = f.read()
             nome_arquivo = os.path.basename(caminho_csv)
-            msg.add_attachment(conteudo, maintype="application", subtype="octet-stream", filename=nome_arquivo)
+            msg.add_attachment(
+                conteudo,
+                maintype="application",
+                subtype="octet-stream",
+                filename=nome_arquivo,
+            )
 
         # Envio via STARTTLS
         with smtplib.SMTP("smtp.office365.com", 587) as smtp:
@@ -36,7 +60,6 @@ def enviar_email_com_csv(caminho_csv, destinatarios, assunto="Relatório CSV", c
 
 
 def gerar_relatorio_login_logout(output_file, data):
-    MONGO_CONNECTION_STR = os.getenv("MONGO_CONNECTION_STR_PRD")
 
     # Definir a data como o dia anterior à execução (1h da manhã)
     dia_seguinte = data + timedelta(days=1)
@@ -112,3 +135,10 @@ def main():
             # "felipe.silva.terceirizado@eaf.org.br",
         ],
     )
+
+
+relatorio_usuarios_login_logout = PythonOperator(
+    task_id="relatorio_usuarios_login_logout", python_callable=main, dag=dag
+)
+
+relatorio_usuarios_login_logout
