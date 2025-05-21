@@ -141,7 +141,7 @@ def main():
 relatorio_usuarios_login_logout = PythonVirtualenvOperator(
     task_id="relatorio_usuarios_login_logout",
     python_callable=main,
-    requirements=["pymongo==4.13.0"],
+    requirements=["pymongo==4.10.1"],
     system_site_packages=False,
     dag=dag,
 )
