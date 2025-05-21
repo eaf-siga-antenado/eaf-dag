@@ -29,6 +29,8 @@ def enviar_email_com_csv(
     assunto="Relatório CSV",
     corpo="Segue em anexo o relatório.",
 ):
+    import smtplib
+    from email.message import EmailMessage
     try:
         # Criação da mensagem
         msg = EmailMessage()
@@ -60,6 +62,7 @@ def enviar_email_com_csv(
 
 
 def gerar_relatorio_login_logout(output_file, data):
+    from datetime import datetime, timedelta
     from pymongo import MongoClient
 
     # Definir a data como o dia anterior à execução (1h da manhã)
@@ -126,6 +129,7 @@ def gerar_relatorio_login_logout(output_file, data):
 
 
 def main():
+    from datetime import datetime, timedelta
     data = (datetime.now() - timedelta(days=1)).date()
     output_file = f"relatorio_login_logout_{data.strftime('%d-%m-%Y')}.csv"
     gerar_relatorio_login_logout(output_file, data)
