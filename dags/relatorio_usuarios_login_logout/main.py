@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from email.message import EmailMessage
 
 from airflow import DAG
-from airflow.models import Variable
 from airflow.operators.python_operator import PythonVirtualenvOperator
 
 
@@ -21,6 +20,7 @@ dag = DAG(
 
 def main():
     from datetime import datetime, timedelta
+    from airflow.models import Variable
 
     data = (datetime.now() - timedelta(days=1)).date()
     output_file = f"relatorio_login_logout_{data.strftime('%d-%m-%Y')}.csv"
