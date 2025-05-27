@@ -72,6 +72,8 @@ def main():
         from datetime import datetime, timedelta
         from pymongo import MongoClient
         from airflow.models import Variable
+        import os
+        import csv
 
         MONGO_CONNECTION_STR = Variable.get("MONGO_CONNECTION_STR_EAF_PRD")
 
