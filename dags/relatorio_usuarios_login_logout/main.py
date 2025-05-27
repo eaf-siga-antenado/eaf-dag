@@ -34,6 +34,8 @@ def main():
         import smtplib
         from email.message import EmailMessage
         from airflow.models import Variable
+        import os
+        import csv
 
         EMAIL_REMETENTE = Variable.get("EMAIL_REMETENTE_RELATORIO")
         SENHA_EMAIL = Variable.get("SENHA_EMAIL_RELATORIO")
