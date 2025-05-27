@@ -145,7 +145,7 @@ def main():
         [
             "marcelo.ferreira.terceirizado@eaf.org.br",
             "felipe.silva.terceirizado@eaf.org.br",
-            #"ana.fernandes@eaf.org.br"
+            "ana.fernandes@eaf.org.br"
         ],
         assunto=f"Relatório Diário de horas trabalhas CRM - {data.strftime('%d/%m/%Y')}",
         corpo=f"""
