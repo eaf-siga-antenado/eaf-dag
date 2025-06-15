@@ -102,7 +102,7 @@ default_args = {
 }
 
 dag = DAG(
-    'alertas_power_automate',
+    'tabela_fase_extra',
     default_args=default_args,
     schedule_interval='*/30 * * * *',
     catchup=False
