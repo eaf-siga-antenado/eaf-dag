@@ -17,9 +17,11 @@ with DAG(
         import locale
         from sqlalchemy import create_engine, text
         from sqlalchemy.exc import SQLAlchemyError
+        from airflow.models import Variable
 
         def get_env_variable(var_name):
-            value = os.getenv(var_name)
+            return True # test
+            value = Variable.get(var_name)
             if value is None:
                 raise EnvironmentError(f"Variável de ambiente '{var_name}' não encontrada.")
             return value
