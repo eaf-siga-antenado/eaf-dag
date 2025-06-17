@@ -30,10 +30,12 @@ with DAG(
             database = get_env_variable('DATABASE')
             username = get_env_variable('DBUSER')
             password = get_env_variable('DBPASSWORD')
+            # imprime as variáveis para depuração
+            print(f"Conectando ao banco de dados {database} no servidor {server} com usuário {username}")
 
-            # engine = create_engine(
-            #     f"mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC+Driver+17+for+SQL+Server"
-            # )
+            engine = create_engine(
+                f"mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC+Driver+17+for+SQL+Server"
+            )
         except Exception as e:
             print(f"[ERRO] Falha na configuração de conexão: {e}")
             return
@@ -55,7 +57,7 @@ with DAG(
             print(f"[ERRO] Falha ao obter ou processar dados da API: {e}")
             return
 
-        locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
+        # locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 
         data_atual = date.today()
         ano = data_atual.year
@@ -77,6 +79,11 @@ with DAG(
                 pass
             else:
                 nome_dia += '-feira'
+        # imprime as variáveis para depuração
+        print(f"Ano: {ano}, Mês Num: {mes_num}, Mês Abre: {mes_abre}, Nome Mês: {nome_mes}, "
+              f"Mês Ano: {mes_ano}, Ano Mes INT: {ano_mes_int}, Início Mês: {inicio_mes}, "
+              f"Trimestre: {trimestre}, Bimestre: {bimestre}, Semestre: {semestre}, "
+              f"Semana: {semana}, Dia Semana: {dia_semana}, Nome Dia: {nome_dia}")  
 
         # try:
         #     with engine.begin() as conn:
