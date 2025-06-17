@@ -70,7 +70,7 @@ with DAG(
         trimestre = (mes_num - 1) // 3 + 1
         bimestre = (mes_num - 1) // 2 + 1
         semestre = 1 if mes_num <= 6 else 2
-        semana = data_atual.isocalendar().week
+        semana = data_atual.isocalendar()[1]
         dia_semana = data_atual.weekday() + 1
         nome_dia = data_atual.strftime("%A").lower()
 
