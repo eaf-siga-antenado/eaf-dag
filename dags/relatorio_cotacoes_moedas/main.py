@@ -30,9 +30,9 @@ with DAG(
             username = get_env_variable('DBUSER')
             password = get_env_variable('DBPASSWORD')
 
-            engine = create_engine(
-                f"mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC+Driver+17+for+SQL+Server"
-            )
+            # engine = create_engine(
+            #     f"mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC+Driver+17+for+SQL+Server"
+            # )
         except Exception as e:
             print(f"[ERRO] Falha na configuração de conexão: {e}")
             return
