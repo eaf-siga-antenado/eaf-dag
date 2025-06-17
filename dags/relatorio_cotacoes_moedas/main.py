@@ -20,7 +20,6 @@ with DAG(
         from airflow.models import Variable
 
         def get_env_variable(var_name):
-            return True # test
             value = Variable.get(var_name)
             if value is None:
                 raise EnvironmentError(f"Variável de ambiente '{var_name}' não encontrada.")
