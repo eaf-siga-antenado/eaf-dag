@@ -103,97 +103,97 @@ with DAG(
               f"Trimestre: {trimestre}, Bimestre: {bimestre}, Semestre: {semestre}, "
               f"Semana: {semana}, Dia Semana: {dia_semana}, Nome Dia: {nome_dia}")  
 
-        # try:
-        #     with engine.begin() as conn:
-        #         ultima_data = conn.execute(
-        #             text("SELECT MAX(Data) FROM eaf_tvro.CalendarioCotacao")
-        #         ).scalar()
+        try:
+            with engine.begin() as conn:
+                ultima_data = conn.execute(
+                    text("SELECT MAX(Data) FROM eaf_tvro.CalendarioCotacao")
+                ).scalar()
 
-        #         if ultima_data is None:
-        #             ultima_data = date(2025, 1, 1)
+                if ultima_data is None:
+                    ultima_data = date(2025, 1, 1)
 
-        #         if ultima_data > data_atual:
-        #             ultima_data = data_atual
+                if ultima_data > data_atual:
+                    ultima_data = data_atual
 
-        #         dias_faltantes = pd.date_range(ultima_data + timedelta(days=1), data_atual)
+                dias_faltantes = pd.date_range(ultima_data + timedelta(days=1), data_atual)
 
-        #         for data_f in dias_faltantes:
-        #             data_f = data_f.date()
-        #             ano = data_f.year
-        #             mes_num = data_f.month
+                for data_f in dias_faltantes:
+                    data_f = data_f.date()
+                    ano = data_f.year
+                    mes_num = data_f.month
 
-        #             nome_mes = data_f.strftime('%B').capitalize()
-        #             mes_abre = data_f.strftime('%b').capitalize()
-        #             mes_ano = f"{data_f.strftime('%b').capitalize()}-{str(ano)[-2:]}"
+                    nome_mes = data_f.strftime('%B').capitalize()
+                    mes_abre = data_f.strftime('%b').capitalize()
+                    mes_ano = f"{data_f.strftime('%b').capitalize()}-{str(ano)[-2:]}"
 
-        #             nome_dia = data_f.strftime('%A').lower()
-        #             if 'feira' not in nome_dia:
-        #                 if nome_dia == 'sábado' or nome_dia == 'domingo':
-        #                     pass
-        #                 else:
-        #                     nome_dia += '-feira'
+                    nome_dia = data_f.strftime('%A').lower()
+                    if 'feira' not in nome_dia:
+                        if nome_dia == 'sábado' or nome_dia == 'domingo':
+                            pass
+                        else:
+                            nome_dia += '-feira'
 
-        #             cotacao_existente = conn.execute(
-        #                 text("SELECT CotacaoUSD, CotacaoEUR, CotacaoGBP FROM eaf_tvro.CalendarioCotacao WHERE Data = :data"),
-        #                 {"data": data_f}
-        #             ).fetchone()
+                    cotacao_existente = conn.execute(
+                        text("SELECT CotacaoUSD, CotacaoEUR, CotacaoGBP FROM eaf_tvro.CalendarioCotacao WHERE Data = :data"),
+                        {"data": data_f}
+                    ).fetchone()
 
-        #             if cotacao_existente:
-        #                 if (cotacao_existente[0] != cotacao_usd or cotacao_existente[1] != cotacao_eur or cotacao_existente[2] != cotacao_gbp):
-        #                     conn.execute(
-        #                         text("""
-        #                             UPDATE eaf_tvro.CalendarioCotacao
-        #                             SET CotacaoUSD = :usd, CotacaoEUR = :eur, CotacaoGBP = :gbp
-        #                             WHERE Data = :data
-        #                         """),
-        #                         {
-        #                             "data": data_f,
-        #                             "usd": cotacao_usd,
-        #                             "eur": cotacao_eur,
-        #                             "gbp": cotacao_gbp
-        #                         }
-        #                     )
-        #                     print(f"[INFO] Cotação atualizada para {data_f}.")
-        #             else:
-        #                 conn.execute(
-        #                     text(""" 
-        #                         INSERT INTO eaf_tvro.CalendarioCotacao (
-        #                             Data, Ano, NomeMes, MesAbre, MesAno, MesNum,
-        #                             AnoMesINT, InicioMes, Trimestre, TrimestreAbreviado,
-        #                             Bimestre, Semestre, Semana, DiaSemana, NomeDia,
-        #                             CotacaoUSD, CotacaoEUR, CotacaoGBP
-        #                         )
-        #                         VALUES (
-        #                             :data, :ano, :nomemes, :mesabre, :mesano, :mesnum,
-        #                             :anomesint, :iniciomes, :trimestre, :trimestreabrev,
-        #                             :bimestre, :semestre, :semana, :diasemana, :nomedia,
-        #                             :usd, :eur, :gbp
-        #                         )
-        #                     """),
-        #                     {
-        #                         "data": data_f,
-        #                         "ano": ano,
-        #                         "nomemes": nome_mes,
-        #                         "mesabre": mes_abre,
-        #                         "mesano": mes_ano,
-        #                         "mesnum": mes_num,
-        #                         "anomesint": ano_mes_int,
-        #                         "iniciomes": inicio_mes,
-        #                         "trimestre": trimestre,
-        #                         "trimestreabrev": f"{trimestre}º Trim",
-        #                         "bimestre": f"{bimestre}º Bim",
-        #                         "semestre": f"{semestre}º Sem",
-        #                         "semana": semana,
-        #                         "diasemana": dia_semana,
-        #                         "nomedia": nome_dia,
-        #                         "usd": cotacao_usd,
-        #                         "eur": cotacao_eur,
-        #                         "gbp": cotacao_gbp
-        #                     }
-        #                 )
-        #                 print(f"[INFO] Novo registro inserido para {data_f}.")
-        # except SQLAlchemyError as e:
-        #     print(f"[ERRO] Falha ao executar operação no banco de dados: {e}")
+                    if cotacao_existente:
+                        if (cotacao_existente[0] != cotacao_usd or cotacao_existente[1] != cotacao_eur or cotacao_existente[2] != cotacao_gbp):
+                            conn.execute(
+                                text("""
+                                    UPDATE eaf_tvro.CalendarioCotacao
+                                    SET CotacaoUSD = :usd, CotacaoEUR = :eur, CotacaoGBP = :gbp
+                                    WHERE Data = :data
+                                """),
+                                {
+                                    "data": data_f,
+                                    "usd": cotacao_usd,
+                                    "eur": cotacao_eur,
+                                    "gbp": cotacao_gbp
+                                }
+                            )
+                            print(f"[INFO] Cotação atualizada para {data_f}.")
+                    else:
+                        conn.execute(
+                            text(""" 
+                                INSERT INTO eaf_tvro.CalendarioCotacao (
+                                    Data, Ano, NomeMes, MesAbre, MesAno, MesNum,
+                                    AnoMesINT, InicioMes, Trimestre, TrimestreAbreviado,
+                                    Bimestre, Semestre, Semana, DiaSemana, NomeDia,
+                                    CotacaoUSD, CotacaoEUR, CotacaoGBP
+                                )
+                                VALUES (
+                                    :data, :ano, :nomemes, :mesabre, :mesano, :mesnum,
+                                    :anomesint, :iniciomes, :trimestre, :trimestreabrev,
+                                    :bimestre, :semestre, :semana, :diasemana, :nomedia,
+                                    :usd, :eur, :gbp
+                                )
+                            """),
+                            {
+                                "data": data_f,
+                                "ano": ano,
+                                "nomemes": nome_mes,
+                                "mesabre": mes_abre,
+                                "mesano": mes_ano,
+                                "mesnum": mes_num,
+                                "anomesint": ano_mes_int,
+                                "iniciomes": inicio_mes,
+                                "trimestre": trimestre,
+                                "trimestreabrev": f"{trimestre}º Trim",
+                                "bimestre": f"{bimestre}º Bim",
+                                "semestre": f"{semestre}º Sem",
+                                "semana": semana,
+                                "diasemana": dia_semana,
+                                "nomedia": nome_dia,
+                                "usd": cotacao_usd,
+                                "eur": cotacao_eur,
+                                "gbp": cotacao_gbp
+                            }
+                        )
+                        print(f"[INFO] Novo registro inserido para {data_f}.")
+        except SQLAlchemyError as e:
+            print(f"[ERRO] Falha ao executar operação no banco de dados: {e}")
 
     PythonVirtualenvOperator(
         task_id="cotacao_diaria_moeda",
