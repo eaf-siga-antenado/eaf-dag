@@ -63,7 +63,13 @@ with DAG(
         ano = data_atual.year
         mes_num = data_atual.month
         mes_abre = data_atual.strftime('%b').capitalize()
-        nome_mes = data_atual.strftime('%B').capitalize()
+        meses_pt = {
+            'January': 'Janeiro', 'February': 'Fevereiro', 'March': 'Março',
+            'April': 'Abril', 'May': 'Maio', 'June': 'Junho',
+            'July': 'Julho', 'August': 'Agosto', 'September': 'Setembro',
+            'October': 'Outubro', 'November': 'Novembro', 'December': 'Dezembro'
+        }
+        nome_mes = meses_pt[data_atual.strftime('%B')]
         mes_ano = f"{data_atual.strftime('%b').lower()}/{str(ano)[-2:]}"
         ano_mes_int = int(f"{ano}{mes_num:02d}")
         inicio_mes = datetime(ano, mes_num, 1).strftime('%Y-%m-%d 00:00:00')
@@ -73,6 +79,18 @@ with DAG(
         semana = data_atual.isocalendar()[1]
         dia_semana = data_atual.weekday() + 1
         nome_dia = data_atual.strftime("%A").lower()
+
+        dias_pt = {
+            'monday': 'segunda-feira',
+            'tuesday': 'terça-feira',
+            'wednesday': 'quarta-feira',
+            'thursday': 'quinta-feira',
+            'friday': 'sexta-feira',
+            'saturday': 'sábado',
+            'sunday': 'domingo'
+        }
+        nome_dia_en = data_atual.strftime("%A").lower()
+        nome_dia = dias_pt[nome_dia_en]
 
         if 'feira' not in nome_dia:
             if nome_dia == 'sábado' or nome_dia == 'domingo':
