@@ -11,7 +11,7 @@ default_args = {}
 dag = DAG(
     dag_id="os_pendentes_5h",
     default_args=default_args,
-    schedule_interval="0 * * * *",  # Executa todo início de hora
+    schedule_interval="0 */2 * * *",  # Executa a cada 2h
     catchup=False,
     start_date=datetime(2025, 8, 12),
 )
@@ -137,7 +137,7 @@ def main():
     # Envia o e-mail com o relatório
     enviar_email_com_csv(
         output_path,
-        ["marcelo.ferreira.terceirizado@eaf.org.br"],
+        ["felipe.silva.terceirizado@eaf.org.br"],
         assunto="CRM > Alerta OS para análise",
         corpo=f"""
 Prezados,
