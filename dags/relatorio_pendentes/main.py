@@ -26,6 +26,15 @@ def main():
     import smtplib
     from email.message import EmailMessage
 
+    # Verificar se está no horário e dia permitido
+    agora = datetime.now()
+    dia_semana = agora.weekday()  # 0=segunda, 1=terça, ..., 6=domingo
+    hora = agora.hour
+    
+    if dia_semana > 4 or hora < 7 or hora > 22:  # Segunda a sexta (0-4), 7h às 22h
+        logging.info(f"Execução fora do horário permitido. Dia: {dia_semana}, Hora: {hora}")
+        return
+
     # Configurações
     MONGO_CONNECTION_STR = Variable.get("MONGO_CONNECTION_STR_EAF_PRD")
     EMAIL_REMETENTE = Variable.get("EMAIL_REMETENTE_RELATORIO")
