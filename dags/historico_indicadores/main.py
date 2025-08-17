@@ -187,12 +187,17 @@ def historico(**kwargs):
     df_instalados = ti.xcom_pull(task_ids='instalados')
     df_historico = pd.concat([df_criados, df_aberto, df_backlog, df_instalados], ignore_index=True)
     df_historico['data_registro'] = datetime.now().strftime('%d-%m-%Y')
-    print(f'criados:', len(df_criados))
-    print(f'aberto:', len(df_aberto))
-    print(f'backlog:', len(df_backlog))
-    print(f'instalados:', len(df_instalados))
-    print(f'tamanho do dataframe:', len(df_historico))
-    
+
+    df_historico.rename(columns={
+        'Instaladora': 'instaladora',
+        'UF': 'uf',
+        'Municipio': 'municipio',
+        'Horadacriação': 'data_criacao',
+        'Fase': 'fase',
+        'Regra': 'regra',
+    }, inplace=True)
+    df_historico.to_sql("historico_indicadores", engine, if_exists='append', schema='eaf_tvro', index=False)
+
 default_args = {
     'start_date': datetime(2023, 8, 18, 6, 0, 0),
     'retries': None
