@@ -139,17 +139,19 @@ def instalados():
 
     consulta_sql = '''
     SELECT   
-	Instaladora,
-    ibge,
-	UF,
-	Municipio,
-	Horadacriação,
-	Fase,
-	'Em aberto' AS Regra,
-	COUNT(*) quantidade
+        Instaladora,
+        ibge,
+        UF,
+        Municipio,
+        Horadacriação,
+        Fase,
+        'Instalados' AS Regra,
+        COUNT(*) quantidade
     FROM [eaf_tvro].[FaseExtra]
-    WHERE 1=1
-    AND Status = 'IN_PROGRESS'
+    WHERE 1=1 
+    AND Status = 'INSTALLED'
+    AND StatusdaInstalação = 'Instalada'
+    AND [MotivodocontatoInstalação] IN ('Agendamento', 'Interferência')
     GROUP BY
     Instaladora,
     ibge,
