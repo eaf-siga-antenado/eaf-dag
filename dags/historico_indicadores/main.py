@@ -322,6 +322,15 @@ def historico(**kwargs):
     }, inplace=True)
     df_historico.to_sql("historico_indicadores", engine, if_exists='append', schema='eaf_tvro', index=False)
 
+def enviar_mensagem():
+    import requests
+    from airflow.models import Variable
+    chat_id = Variable.get('chat_id')
+    token = Variable.get('token_telegram')
+    message = f'processo do histórico de indicadores finalizado com sucesso!'
+    url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={message}"
+    requests.get(url)
+
 default_args = {
     'start_date': datetime(2023, 8, 18, 6, 0, 0),
     'retries': None
@@ -394,4 +403,10 @@ historico_quantidade = PythonOperator(
     dag=dag
 )
 
-[criados, aberto, backlog, instalados] >> historico >> [backoffice, correcao, auditoria, improdutiva] >> historico_quantidade
+enviar_mensagem = PythonOperator(
+    task_id='enviar_mensagem',
+    python_callable=enviar_mensagem,
+    dag=dag
+)
+
+[criados, aberto, backlog, instalados] >> historico >> [backoffice, correcao, auditoria, improdutiva] >> historico_quantidade >> enviar_mensagem
