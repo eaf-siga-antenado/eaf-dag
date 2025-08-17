@@ -22,23 +22,23 @@ def criados():
     session = Session()
     consulta_sql = '''
     SELECT   
-	Instaladora,
-    ibge,
-	UF,
-	Municipio,
-	Horadacriação,
-	Fase,
-	'Criados' AS Regra,
-	COUNT(*) quantidade
+        Instaladora,
+        ibge,
+        UF,
+        Municipio,
+        Fase,
+        MotivodocontatoInstalação,
+        'Criados' AS Regra,
+        COUNT(*) quantidade
     FROM [eaf_tvro].[FaseExtra]
-    WHERE Horadacriação = CAST(GETDATE() -1 AS DATE)
+    WHERE Horadacriação = CAST(GETDATE() AS DATE)
     GROUP BY
     Instaladora,
     ibge,
     UF,
     Municipio,
-    Horadacriação,
-    Fase
+    Fase,
+    MotivodocontatoInstalação
     '''
     resultado = session.execute(text(consulta_sql))
     df_criados = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
@@ -60,14 +60,14 @@ def aberto():
 
     consulta_sql = '''
     SELECT   
-	Instaladora,
-    ibge,
-	UF,
-	Municipio,
-	Horadacriação,
-	Fase,
-	'Em aberto' AS Regra,
-	COUNT(*) quantidade
+        Instaladora,
+        ibge,
+        UF,
+        Municipio,
+        Fase,
+        MotivodocontatoInstalação,
+        'Em aberto' AS Regra,
+        COUNT(*) quantidade
     FROM [eaf_tvro].[FaseExtra]
     WHERE 1=1
     AND Status = 'IN_PROGRESS'
@@ -77,7 +77,8 @@ def aberto():
     UF,
     Municipio,
     Horadacriação,
-    Fase
+    Fase,
+    MotivodocontatoInstalação
     '''
     resultado = session.execute(text(consulta_sql))
     df_aberto = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
@@ -99,14 +100,14 @@ def backlog():
 
     consulta_sql = '''
     SELECT   
-	Instaladora,
-    ibge,
-	UF,
-	Municipio,
-	Horadacriação,
-	Fase,
-	'Backlog' AS Regra,
-	COUNT(*) quantidade
+        Instaladora,
+        ibge,
+        UF,
+        Municipio,
+        Fase,
+        MotivodocontatoInstalação,
+        'Backlog' AS Regra,
+        COUNT(*) quantidade
     FROM [eaf_tvro].[FaseExtra]
     WHERE 1=1
     AND Status = 'IN_PROGRESS'
@@ -116,8 +117,8 @@ def backlog():
     ibge,
     UF,
     Municipio,
-    Horadacriação,
-    Fase
+    Fase,
+    MotivodocontatoInstalação
     '''
     resultado = session.execute(text(consulta_sql))
     df_backlog = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
@@ -143,8 +144,8 @@ def instalados():
         ibge,
         UF,
         Municipio,
-        Horadacriação,
         Fase,
+        MotivodocontatoInstalação,
         'Instalados' AS Regra,
         COUNT(*) quantidade
     FROM [eaf_tvro].[FaseExtra]
@@ -157,8 +158,8 @@ def instalados():
     ibge,
     UF,
     Municipio,
-    Horadacriação,
-    Fase
+    Fase,
+    MotivodocontatoInstalação
     '''
     resultado = session.execute(text(consulta_sql))
     df_instalados = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
@@ -192,7 +193,7 @@ def historico(**kwargs):
         'Instaladora': 'instaladora',
         'UF': 'uf',
         'Municipio': 'municipio',
-        'Horadacriação': 'data_criacao',
+        'MotivodocontatoInstalação': 'motivo_contato',
         'Fase': 'fase',
         'Regra': 'regra',
     }, inplace=True)
