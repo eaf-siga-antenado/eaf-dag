@@ -286,6 +286,8 @@ def historico_quantidade(**kwargs):
     df_improdutiva = ti.xcom_pull(task_ids='improdutiva')
     df_historico_quantidade = pd.concat([df_correcao, df_auditoria, df_improdutiva, df_backoffice], ignore_index=True, axis=1)
     df_historico_quantidade['data_registro'] = datetime.now().strftime('%d-%m-%Y')
+    print(len(df_historico_quantidade))
+    print(df_historico_quantidade.head())
     df_historico_quantidade.to_sql("historico_indicadores_quantidade", engine, if_exists='append', schema='eaf_tvro', index=False)
 
 def historico(**kwargs):
