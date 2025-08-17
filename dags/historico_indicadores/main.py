@@ -183,8 +183,12 @@ def historico(**kwargs):
     df_aberto = ti.xcom_pull(task_ids='aberto')
     df_backlog = ti.xcom_pull(task_ids='backlog')
     df_instalados = ti.xcom_pull(task_ids='instalados')
-    df_historico = pd.concat([df_criados, df_aberto, df_backlog, df_instalados])
+    df_historico = pd.concat([df_criados, df_aberto, df_backlog, df_instalados], ignore_index=True)
     df_historico['data_registro'] = datetime.now().strftime('%d-%m-%Y')
+    print(f'criados:', len(df_criados))
+    print(f'aberto:', len(df_aberto))
+    print(f'backlog:', len(df_backlog))
+    print(f'instalados:', len(df_instalados))
     print(f'tamanho do dataframe:', len(df_historico))
     
 default_args = {
