@@ -165,6 +165,129 @@ def instalados():
     df_instalados = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
     return df_instalados
 
+def backoffice():
+    import pandas as pd
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    consulta_sql = '''
+    SELECT   
+        COUNT(DISTINCT IDdoticket) qtd_backoffice
+    FROM [eaf_tvro].[FaseExtra]
+    WHERE Status = 'BACKOFFICE'
+    '''
+    resultado = session.execute(text(consulta_sql))
+    df_backoffice = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    return df_backoffice
+
+def correcao():
+    import pandas as pd
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    consulta_sql = '''
+    SELECT   
+        COUNT(DISTINCT IDdoticket) qtd_correcao
+    FROM [eaf_tvro].[FaseExtra]
+    WHERE Status = 'IN_CORRECTION'
+    '''
+    resultado = session.execute(text(consulta_sql))
+    df_correcao = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    return df_correcao
+
+def auditoria():
+    import pandas as pd
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    consulta_sql = '''
+    SELECT   
+        COUNT(DISTINCT IDdoticket) qtd_auditoria
+    FROM [eaf_tvro].[FaseExtra]
+    WHERE Status = 'IN_AUDITING'
+    '''
+    resultado = session.execute(text(consulta_sql))
+    df_auditoria = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    return df_auditoria
+
+def improdutiva():
+    import pandas as pd
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    consulta_sql = '''
+    SELECT   
+        COUNT(DISTINCT IDdoticket) qtd_improdutiva
+    FROM [eaf_tvro].[FaseExtra]
+    WHERE 1=1
+    AND Status = 'INSTALLED'
+    AND StatusdaInstalação <> 'Instalada'
+    '''
+    resultado = session.execute(text(consulta_sql))
+    df_improdutiva = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    return df_improdutiva
+
+def historico_quantidade(**kwargs):
+    
+    import pandas as pd
+    from datetime import datetime
+    from airflow.models import Variable
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine, text
+
+    server = Variable.get('DBSERVER')
+    database = Variable.get('DATABASE')
+    username = Variable.get('DBUSER')
+    password = Variable.get('DBPASSWORD')
+    engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    ti = kwargs['ti']
+    df_backoffice = ti.xcom_pull(task_ids='backoffice')
+    df_correcao = ti.xcom_pull(task_ids='correcao')
+    df_auditoria = ti.xcom_pull(task_ids='auditoria')
+    df_improdutiva = ti.xcom_pull(task_ids='improdutiva')
+    df_historico_quantidade = pd.concat([df_correcao, df_auditoria, df_improdutiva, df_backoffice], ignore_index=True)
+    df_historico_quantidade['data_registro'] = datetime.now().strftime('%d-%m-%Y')
+    df_historico_quantidade.to_sql("historico_indicadores_quantidade", engine, if_exists='append', schema='eaf_tvro', index=False)
+
 def historico(**kwargs):
     
     import pandas as pd
@@ -241,4 +364,34 @@ historico = PythonOperator(
     dag=dag
 ) 
 
-[criados, aberto, backlog, instalados] >> historico
+backoffice = PythonOperator(
+    task_id='backoffice',
+    python_callable=backoffice,
+    dag=dag
+) 
+
+correcao = PythonOperator(
+    task_id='correcao',
+    python_callable=correcao,
+    dag=dag
+) 
+
+auditoria = PythonOperator(
+    task_id='auditoria',
+    python_callable=auditoria,
+    dag=dag
+)
+
+improdutiva = PythonOperator(
+    task_id='improdutiva',
+    python_callable=improdutiva,
+    dag=dag
+)
+
+historico_quantidade = PythonOperator(
+    task_id='historico_quantidade',
+    python_callable=historico_quantidade,
+    dag=dag
+)
+
+[criados, aberto, backlog, instalados] >> historico >> [backoffice, correcao, auditoria, improdutiva] >> historico_quantidade
