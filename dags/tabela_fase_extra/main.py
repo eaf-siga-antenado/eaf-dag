@@ -24,16 +24,34 @@ def atualizar_instalacoes_cpf():
     session = Session()
 
     consulta_sql = '''
-    SELECT   
-        DISTINCT
-            f.CPF
-    FROM [eaf_tvro].[Freshdesk] f
-    JOIN [eaf_tvro].[tabela_fase_extra] tfe
-    ON f.CPF = tfe.cpf
+    WITH temp AS (
+    SELECT 
+        CPF
+    FROM [eaf_tvro].[Freshdesk]
     WHERE 1=1
     AND [Status] = 'INSTALLED'
     AND [StatusdaInstalação] = 'Instalada'
     AND [MotivodocontatoInstalação] IN ('Agendamento', 'Interferência')
+
+    UNION
+
+    SELECT 
+        CPF
+    FROM [eaf_tvro].[FaseExtra]
+    WHERE 1=1
+    AND [Status] = 'INSTALLED'
+    AND [StatusdaInstalação] = 'Instalada'
+    AND [MotivodocontatoInstalação] IN ('Agendamento', 'Interferência')
+
+    )
+
+    SELECT   
+        DISTINCT
+            temp.CPF
+    FROM temp
+    JOIN [eaf_tvro].[tabela_fase_extra] tfe
+    ON temp.CPF = tfe.cpf
+    WHERE 1=1
     AND tfe.status_cpf <> 'Instalado'
     '''
     resultado = session.execute(text(consulta_sql))
@@ -68,16 +86,34 @@ def atualizar_instalacoes_cod_familia():
     session = Session()
 
     consulta_sql = '''
-    SELECT   
-        DISTINCT
-	    f.CodFamilia
-    FROM [eaf_tvro].[Freshdesk] f
-    JOIN [eaf_tvro].[tabela_fase_extra] tfe
-    ON TRY_CAST(f.CodFamilia AS bigint) = tfe.cod_familia
+    WITH temp AS (
+    SELECT 
+        CodFamilia
+    FROM [eaf_tvro].[Freshdesk]
     WHERE 1=1
     AND [Status] = 'INSTALLED'
     AND [StatusdaInstalação] = 'Instalada'
     AND [MotivodocontatoInstalação] IN ('Agendamento', 'Interferência')
+
+    UNION
+
+    SELECT 
+        CodFamilia
+    FROM [eaf_tvro].[FaseExtra]
+    WHERE 1=1
+    AND [Status] = 'INSTALLED'
+    AND [StatusdaInstalação] = 'Instalada'
+    AND [MotivodocontatoInstalação] IN ('Agendamento', 'Interferência')
+
+    )
+
+    SELECT   
+        DISTINCT
+            temp.CodFamilia
+    FROM temp
+    JOIN [eaf_tvro].[tabela_fase_extra] tfe
+    ON TRY_CAST(temp.CodFamilia AS bigint) = tfe.cod_familia
+    WHERE 1=1
     AND tfe.status_codfamilia <> 'Instalado'
     '''
     resultado = session.execute(text(consulta_sql))
