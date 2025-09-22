@@ -103,6 +103,9 @@ def main():
 
     logger.info(f"Encontradas {len(resultados)} OS para exportar...")
 
+    if len(resultados) == 0:
+        return
+
     os.makedirs("reports", exist_ok=True)
     output_path = os.path.join("reports", OUTPUT_CSV_PATH)
     with open(output_path, mode="w", newline='', encoding="utf-8-sig") as outfile:

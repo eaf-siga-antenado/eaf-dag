@@ -14,7 +14,6 @@ with DAG(
         import requests
         import pandas as pd
         from datetime import datetime, date, timedelta
-        import locale
         from sqlalchemy import create_engine, text
         from sqlalchemy.exc import SQLAlchemyError
         from airflow.models import Variable
@@ -25,14 +24,65 @@ with DAG(
                 raise EnvironmentError(f"Variável de ambiente '{var_name}' não encontrada.")
             return value
 
+        meses_pt = {
+            'January': 'Janeiro', 'February': 'Fevereiro', 'March': 'Março',
+            'April': 'Abril', 'May': 'Maio', 'June': 'Junho',
+            'July': 'Julho', 'August': 'Agosto', 'September': 'Setembro',
+            'October': 'Outubro', 'November': 'Novembro', 'December': 'Dezembro'
+        }
+        meses_abrev_pt = {
+            'Jan': 'Jan', 'Feb': 'Fev', 'Mar': 'Mar', 'Apr': 'Abr',
+            'May': 'Mai', 'Jun': 'Jun', 'Jul': 'Jul', 'Aug': 'Ago',
+            'Sep': 'Set', 'Oct': 'Out', 'Nov': 'Nov', 'Dec': 'Dez'
+        }
+        dias_pt = {
+            'monday': 'segunda-feira',
+            'tuesday': 'terça-feira',
+            'wednesday': 'quarta-feira',
+            'thursday': 'quinta-feira',
+            'friday': 'sexta-feira',
+            'saturday': 'sábado',
+            'sunday': 'domingo'
+        }
+
+        def traduzir_data(data_ref):
+            """Recebe um objeto date e retorna os campos traduzidos em PT-BR."""
+            ano = data_ref.year
+            mes_num = data_ref.month
+            nome_mes = meses_pt[data_ref.strftime('%B')]
+            mes_abre = meses_abrev_pt[data_ref.strftime('%b')]
+            mes_ano = f"{mes_abre.lower()}/{str(ano)[-2:]}"
+            ano_mes_int = int(f"{ano}{mes_num:02d}")
+            inicio_mes = datetime(ano, mes_num, 1).strftime('%Y-%m-%d 00:00:00')
+            trimestre = (mes_num - 1) // 3 + 1
+            bimestre = (mes_num - 1) // 2 + 1
+            semestre = 1 if mes_num <= 6 else 2
+            semana = data_ref.isocalendar()[1]
+            dia_semana = data_ref.weekday() + 1
+            nome_dia = dias_pt[data_ref.strftime("%A").lower()]
+            if 'feira' not in nome_dia and nome_dia not in ['sábado', 'domingo']:
+                nome_dia += '-feira'
+            return {
+                "ano": ano,
+                "mes_num": mes_num,
+                "nome_mes": nome_mes,
+                "mes_abre": mes_abre,
+                "mes_ano": mes_ano,
+                "ano_mes_int": ano_mes_int,
+                "inicio_mes": inicio_mes,
+                "trimestre": trimestre,
+                "bimestre": bimestre,
+                "semestre": semestre,
+                "semana": semana,
+                "dia_semana": dia_semana,
+                "nome_dia": nome_dia
+            }
+
         try:
             server = get_env_variable('DBSERVER')
             database = get_env_variable('DATABASE')
             username = get_env_variable('DBUSER')
             password = get_env_variable('DBPASSWORD')
-            # imprime as variáveis para depuração
-            print(f"Conectando ao banco de dados {database} no servidor {server} com usuário {username}")
-
             engine = create_engine(
                 f"mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC+Driver+18+for+SQL+Server"
             )
@@ -49,59 +99,13 @@ with DAG(
             cotacao_usd = float(dados["USDBRL"]["bid"])
             cotacao_eur = float(dados["EURBRL"]["bid"])
             cotacao_gbp = float(dados["GBPBRL"]["bid"])
-
-            print(f"Cotação USD: {cotacao_usd}")
-            print(f"Cotação EUR: {cotacao_eur}")
-            print(f"Cotação GBP: {cotacao_gbp}")
-        except (requests.RequestException, KeyError, ValueError) as e:
-            print(f"[ERRO] Falha ao obter ou processar dados da API: {e}")
+        except Exception as e:
+            print(f"[ERRO] Falha ao obter dados da API: {e}")
             return
 
-        # locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
-
-        data_atual = date.today()
-        ano = data_atual.year
-        mes_num = data_atual.month
-        mes_abre = data_atual.strftime('%b').capitalize()
-        meses_pt = {
-            'January': 'Janeiro', 'February': 'Fevereiro', 'March': 'Março',
-            'April': 'Abril', 'May': 'Maio', 'June': 'Junho',
-            'July': 'Julho', 'August': 'Agosto', 'September': 'Setembro',
-            'October': 'Outubro', 'November': 'Novembro', 'December': 'Dezembro'
-        }
-        nome_mes = meses_pt[data_atual.strftime('%B')]
-        mes_ano = f"{data_atual.strftime('%b').lower()}/{str(ano)[-2:]}"
-        ano_mes_int = int(f"{ano}{mes_num:02d}")
-        inicio_mes = datetime(ano, mes_num, 1).strftime('%Y-%m-%d 00:00:00')
-        trimestre = (mes_num - 1) // 3 + 1
-        bimestre = (mes_num - 1) // 2 + 1
-        semestre = 1 if mes_num <= 6 else 2
-        semana = data_atual.isocalendar()[1]
-        dia_semana = data_atual.weekday() + 1
-        nome_dia = data_atual.strftime("%A").lower()
-
-        dias_pt = {
-            'monday': 'segunda-feira',
-            'tuesday': 'terça-feira',
-            'wednesday': 'quarta-feira',
-            'thursday': 'quinta-feira',
-            'friday': 'sexta-feira',
-            'saturday': 'sábado',
-            'sunday': 'domingo'
-        }
-        nome_dia_en = data_atual.strftime("%A").lower()
-        nome_dia = dias_pt[nome_dia_en]
-
-        if 'feira' not in nome_dia:
-            if nome_dia == 'sábado' or nome_dia == 'domingo':
-                pass
-            else:
-                nome_dia += '-feira'
-        # imprime as variáveis para depuração
-        print(f"Ano: {ano}, Mês Num: {mes_num}, Mês Abre: {mes_abre}, Nome Mês: {nome_mes}, "
-              f"Mês Ano: {mes_ano}, Ano Mes INT: {ano_mes_int}, Início Mês: {inicio_mes}, "
-              f"Trimestre: {trimestre}, Bimestre: {bimestre}, Semestre: {semestre}, "
-              f"Semana: {semana}, Dia Semana: {dia_semana}, Nome Dia: {nome_dia}")  
+        hoje = date.today()
+        dados_hoje = traduzir_data(hoje)
+        print(f"[DEBUG] {dados_hoje}")
 
         try:
             with engine.begin() as conn:
@@ -112,26 +116,14 @@ with DAG(
                 if ultima_data is None:
                     ultima_data = date(2025, 1, 1)
 
-                if ultima_data > data_atual:
-                    ultima_data = data_atual
+                if ultima_data > hoje:
+                    ultima_data = hoje
 
-                dias_faltantes = pd.date_range(ultima_data + timedelta(days=1), data_atual)
+                dias_faltantes = pd.date_range(ultima_data + timedelta(days=1), hoje)
 
                 for data_f in dias_faltantes:
                     data_f = data_f.date()
-                    ano = data_f.year
-                    mes_num = data_f.month
-
-                    nome_mes = data_f.strftime('%B').capitalize()
-                    mes_abre = data_f.strftime('%b').capitalize()
-                    mes_ano = f"{data_f.strftime('%b').capitalize()}-{str(ano)[-2:]}"
-
-                    nome_dia = data_f.strftime('%A').lower()
-                    if 'feira' not in nome_dia:
-                        if nome_dia == 'sábado' or nome_dia == 'domingo':
-                            pass
-                        else:
-                            nome_dia += '-feira'
+                    dados_data = traduzir_data(data_f)
 
                     cotacao_existente = conn.execute(
                         text("SELECT CotacaoUSD, CotacaoEUR, CotacaoGBP FROM eaf_tvro.CalendarioCotacao WHERE Data = :data"),
@@ -146,12 +138,7 @@ with DAG(
                                     SET CotacaoUSD = :usd, CotacaoEUR = :eur, CotacaoGBP = :gbp
                                     WHERE Data = :data
                                 """),
-                                {
-                                    "data": data_f,
-                                    "usd": cotacao_usd,
-                                    "eur": cotacao_eur,
-                                    "gbp": cotacao_gbp
-                                }
+                                {"data": data_f, "usd": cotacao_usd, "eur": cotacao_eur, "gbp": cotacao_gbp}
                             )
                             print(f"[INFO] Cotação atualizada para {data_f}.")
                     else:
@@ -172,20 +159,20 @@ with DAG(
                             """),
                             {
                                 "data": data_f,
-                                "ano": ano,
-                                "nomemes": nome_mes,
-                                "mesabre": mes_abre,
-                                "mesano": mes_ano,
-                                "mesnum": mes_num,
-                                "anomesint": ano_mes_int,
-                                "iniciomes": inicio_mes,
-                                "trimestre": trimestre,
-                                "trimestreabrev": f"{trimestre}º Trim",
-                                "bimestre": f"{bimestre}º Bim",
-                                "semestre": f"{semestre}º Sem",
-                                "semana": semana,
-                                "diasemana": dia_semana,
-                                "nomedia": nome_dia,
+                                "ano": dados_data["ano"],
+                                "nomemes": dados_data["nome_mes"],
+                                "mesabre": dados_data["mes_abre"],
+                                "mesano": dados_data["mes_ano"],
+                                "mesnum": dados_data["mes_num"],
+                                "anomesint": dados_data["ano_mes_int"],
+                                "iniciomes": dados_data["inicio_mes"],
+                                "trimestre": dados_data["trimestre"],
+                                "trimestreabrev": f"{dados_data['trimestre']}º Trim",
+                                "bimestre": f"{dados_data['bimestre']}º Bim",
+                                "semestre": f"{dados_data['semestre']}º Sem",
+                                "semana": dados_data["semana"],
+                                "diasemana": dados_data["dia_semana"],
+                                "nomedia": dados_data["nome_dia"],
                                 "usd": cotacao_usd,
                                 "eur": cotacao_eur,
                                 "gbp": cotacao_gbp
@@ -193,16 +180,12 @@ with DAG(
                         )
                         print(f"[INFO] Novo registro inserido para {data_f}.")
         except SQLAlchemyError as e:
-            print(f"[ERRO] Falha ao executar operação no banco de dados: {e}")
+            print(f"[ERRO] Falha no banco: {e}")
 
     PythonVirtualenvOperator(
         task_id="cotacao_diaria_moeda",
         python_callable=tarefa,
-        requirements=[
-            "pandas",
-            "requests",
-            "sqlalchemy",
-            "pyodbc"
-        ],
+        requirements=["pandas", "requests", "sqlalchemy", "pyodbc"],
         system_site_packages=True
     )
+
