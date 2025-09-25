@@ -149,7 +149,7 @@ def main():
     # Envia o e-mail com o relatório
     enviar_email_com_csv(
         output_path,
-        ["felipe.silva.terceirizado@eaf.org.br"],
+        ["felipe.silva.terceirizado@eaf.org.br", "ana.fernandes@eaf.org.br", "walter.nakagawa@eaf.org.br"],
         assunto="CRM > Alerta OS para análise",
         corpo=f"""
 Prezados,
