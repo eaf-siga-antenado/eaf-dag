@@ -30,8 +30,8 @@ def atualizar_instalacoes_cpf():
     FROM [eaf_tvro].[Freshdesk]
     WHERE 1=1
     AND [Status] = 'INSTALLED'
-    AND [StatusdaInstalação] = 'Instalada'
-    AND [MotivodocontatoInstalação] IN ('Agendamento', 'Interferência')
+    AND [StatusdaInstalação] IN ('Executada procedente', 'Executado - Procedente', 'Instalada')
+    AND [MotivodocontatoInstalação] IN ('Agendamento', 'Interferência', 'Contestação')
 
     UNION
 
@@ -40,8 +40,8 @@ def atualizar_instalacoes_cpf():
     FROM [eaf_tvro].[FaseExtra]
     WHERE 1=1
     AND [Status] = 'INSTALLED'
-    AND [StatusdaInstalação] = 'Instalada'
-    AND [MotivodocontatoInstalação] IN ('Agendamento', 'Interferência')
+    AND [StatusdaInstalação] IN ('Executada procedente', 'Executado - Procedente', 'Instalada')
+    AND [MotivodocontatoInstalação] IN ('Agendamento', 'Interferência', 'Contestação')
 
     )
 
@@ -92,8 +92,8 @@ def atualizar_instalacoes_cod_familia():
     FROM [eaf_tvro].[Freshdesk]
     WHERE 1=1
     AND [Status] = 'INSTALLED'
-    AND [StatusdaInstalação] = 'Instalada'
-    AND [MotivodocontatoInstalação] IN ('Agendamento', 'Interferência')
+    AND [StatusdaInstalação] IN ('Executada procedente', 'Executado - Procedente', 'Instalada')
+    AND [MotivodocontatoInstalação] IN ('Agendamento', 'Interferência', 'Contestação')
 
     UNION
 
@@ -102,8 +102,8 @@ def atualizar_instalacoes_cod_familia():
     FROM [eaf_tvro].[FaseExtra]
     WHERE 1=1
     AND [Status] = 'INSTALLED'
-    AND [StatusdaInstalação] = 'Instalada'
-    AND [MotivodocontatoInstalação] IN ('Agendamento', 'Interferência')
+    AND [StatusdaInstalação] IN ('Executada procedente', 'Executado - Procedente', 'Instalada')
+    AND [MotivodocontatoInstalação] IN ('Agendamento', 'Interferência', 'Contestação')
 
     )
 
