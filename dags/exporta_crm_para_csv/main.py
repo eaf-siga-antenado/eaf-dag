@@ -5,18 +5,43 @@ from datetime import datetime
 from airflow import DAG
 from airflow.operators.python import PythonVirtualenvOperator
 from airflow.models import Variable
+from airflow.models.param import Param # 💡 Importante: Importa o objeto Param
 
 default_args = {}
 
+# 1. ✅ Adicione o argumento 'params' ao DAG
 dag = DAG(
     dag_id="os_check_manual_detalhado",
     default_args=default_args,
-    schedule_interval=None,  # ✅ Executa apenas manualmente
+    schedule_interval=None,  # Executa apenas manualmente
     catchup=False,
     start_date=datetime(2025, 9, 30),
+    # Define os parâmetros de entrada. Eles aparecerão na UI de trigger.
+    params={
+        "os_list": Param(
+            type="array",
+            title="Lista de OSs",
+            description="Lista de números de Ordem de Serviço (OS) a serem verificados.",
+            default=["1234567", "7654321"], # Valor de exemplo
+            minItems=1,
+            uniqueItems=True,
+            items={"type": "string"}
+        ),
+        "destinatarios": Param(
+            type="array",
+            title="E-mails Destinatários",
+            description="Lista de e-mails para onde o relatório será enviado.",
+            default=["usuario@exemplo.com"], # Valor de exemplo
+            minItems=1,
+            uniqueItems=True,
+            items={"type": "string", "format": "email"}
+        ),
+    }
 )
 
+# A função main permanece inalterada, pois já aceita os_list e destinatarios como argumentos.
 def main(os_list=None, destinatarios=None):
+    # ... [O corpo da sua função main() permanece o mesmo aqui] ...
     import os
     import csv
     import logging
@@ -65,7 +90,7 @@ def main(os_list=None, destinatarios=None):
         if ticket:
             # Extrai service e serviceOrder corretos
             service = next((s for s in ticket.get("services", [])
-                            if s.get("serviceOrder", {}).get("number") == clean_number), {})
+                             if s.get("serviceOrder", {}).get("number") == clean_number), {})
             protocol = service.get("protocol", {})
             service_order = service.get("serviceOrder", {})
             installer_response = service_order.get("installerResponse", {}) or {}
@@ -166,14 +191,19 @@ Data de execução: {data_execucao.strftime('%d/%m/%Y %H:%M')}
         logger.error(f"❌ Erro ao enviar e-mail: {e}")
 
 
-# Operator
+# 2. ✅ Altere o PythonVirtualenvOperator para passar os parâmetros do contexto
 os_check_detalhado_task = PythonVirtualenvOperator(
     task_id="os_check_detalhado",
     python_callable=main,
     requirements=["pymongo==4.10.1"],
     system_site_packages=True,
+    # 💡 Use op_kwargs para passar os parâmetros do DAG (disponíveis no Jinja template 'dag_run.conf')
+    op_kwargs={
+        # dag_run.conf contém o JSON que o usuário insere no UI
+        "os_list": "{{ dag_run.conf['os_list'] }}",
+        "destinatarios": "{{ dag_run.conf['destinatarios'] }}",
+    },
     dag=dag,
 )
 
 os_check_detalhado_task
-
