@@ -5,24 +5,25 @@ from datetime import datetime
 from airflow import DAG
 from airflow.operators.python import PythonVirtualenvOperator
 from airflow.models import Variable
-from airflow.models.param import Param # 💡 Importante: Importa o objeto Param
+from airflow.models.param import Param
+# ✅ Importa JSON para lidar com os parâmetros string
+import json 
 
 default_args = {}
 
-# 1. ✅ Adicione o argumento 'params' ao DAG
 dag = DAG(
     dag_id="os_check_manual_detalhado",
     default_args=default_args,
     schedule_interval=None,  # Executa apenas manualmente
     catchup=False,
     start_date=datetime(2025, 9, 30),
-    # Define os parâmetros de entrada. Eles aparecerão na UI de trigger.
+    # Define os parâmetros para a UI de Trigger
     params={
         "os_list": Param(
             type="array",
             title="Lista de OSs",
             description="Lista de números de Ordem de Serviço (OS) a serem verificados.",
-            default=["1234567", "7654321"], # Valor de exemplo
+            default=["1234567"],
             minItems=1,
             uniqueItems=True,
             items={"type": "string"}
@@ -31,7 +32,7 @@ dag = DAG(
             type="array",
             title="E-mails Destinatários",
             description="Lista de e-mails para onde o relatório será enviado.",
-            default=["usuario@exemplo.com"], # Valor de exemplo
+            default=["usuario@exemplo.com"],
             minItems=1,
             uniqueItems=True,
             items={"type": "string", "format": "email"}
@@ -39,9 +40,9 @@ dag = DAG(
     }
 )
 
-# A função main permanece inalterada, pois já aceita os_list e destinatarios como argumentos.
+# A função agora espera os_list e destinatarios como strings JSON (que serão convertidas)
 def main(os_list=None, destinatarios=None):
-    # ... [O corpo da sua função main() permanece o mesmo aqui] ...
+    # Imports internos (necessários para o PythonVirtualenvOperator)
     import os
     import csv
     import logging
@@ -50,9 +51,25 @@ def main(os_list=None, destinatarios=None):
     from airflow.models import Variable
     import smtplib
     from email.message import EmailMessage
+    # ✅ Importa JSON aqui também, dentro do escopo da função
+    import json 
 
     def only_digits(string):
         return "".join(filter(str.isdigit, string or ""))
+
+    # ✅ TRATAMENTO DE PARÂMETROS STRING (JSON) PARA LISTA
+    # O PythonVirtualenvOperator passa os op_kwargs como strings.
+    # Convertemos de volta para list/array Python.
+    try:
+        if isinstance(os_list, str):
+            # O Jinja pode envolver os elementos em aspas simples; substituímos por aspas duplas para JSON.
+            os_list = json.loads(os_list.replace("'", '"')) 
+            
+        if isinstance(destinatarios, str):
+            destinatarios = json.loads(destinatarios.replace("'", '"'))
+    except json.JSONDecodeError as e:
+        # Se a conversão falhar, levanta um erro claro
+        raise ValueError(f"Erro ao decodificar parâmetro JSON. Verifique a sintaxe. Erro: {e}")
 
     # Configurações
     MONGO_CONNECTION_STR = Variable.get("MONGO_CONNECTION_STR_EAF_PRD")
@@ -60,10 +77,12 @@ def main(os_list=None, destinatarios=None):
     SENHA_EMAIL = Variable.get("SENHA_EMAIL_RELATORIO")
 
     if not os_list or not destinatarios:
+        # Este check agora é muito importante, caso a conversão resulte em None ou lista vazia.
         raise ValueError("É necessário fornecer parâmetros: os_list e destinatarios.")
 
-    if isinstance(destinatarios, str):
-        destinatarios = [destinatarios]
+    # A linha abaixo foi removida pois o json.loads já garante que 'destinatarios' é uma lista
+    # if isinstance(destinatarios, str):
+    #     destinatarios = [destinatarios] 
 
     data_execucao = datetime.datetime.now()
     os.makedirs("reports", exist_ok=True)
@@ -164,7 +183,7 @@ def main(os_list=None, destinatarios=None):
         msg = EmailMessage()
         msg["Subject"] = "CRM > Consulta OS Manual Detalhada"
         msg["From"] = EMAIL_REMETENTE
-        msg["To"] = ", ".join(destinatarios)
+        msg["To"] = ", ".join(destinatarios) # Destinatarios é garantido ser uma lista aqui
         msg.set_content(f"""
 Prezados,
 Segue em anexo o resultado da consulta manual de OS no CRM EAF.
@@ -191,13 +210,13 @@ Data de execução: {data_execucao.strftime('%d/%m/%Y %H:%M')}
         logger.error(f"❌ Erro ao enviar e-mail: {e}")
 
 
-# 2. ✅ Altere o PythonVirtualenvOperator para passar os parâmetros do contexto
+# Operator
 os_check_detalhado_task = PythonVirtualenvOperator(
     task_id="os_check_detalhado",
     python_callable=main,
     requirements=["pymongo==4.10.1"],
     system_site_packages=True,
-    render_template_as_native_obj=True,
+    # ✅ Passa os parâmetros como strings JSON (o padrão do Airflow para o Virtualenv)
     op_kwargs={
         "os_list": "{{ dag_run.conf['os_list'] }}",
         "destinatarios": "{{ dag_run.conf['destinatarios'] }}",
