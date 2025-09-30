@@ -197,9 +197,8 @@ os_check_detalhado_task = PythonVirtualenvOperator(
     python_callable=main,
     requirements=["pymongo==4.10.1"],
     system_site_packages=True,
-    # 💡 Use op_kwargs para passar os parâmetros do DAG (disponíveis no Jinja template 'dag_run.conf')
+    render_template_as_native_obj=True,
     op_kwargs={
-        # dag_run.conf contém o JSON que o usuário insere no UI
         "os_list": "{{ dag_run.conf['os_list'] }}",
         "destinatarios": "{{ dag_run.conf['destinatarios'] }}",
     },
