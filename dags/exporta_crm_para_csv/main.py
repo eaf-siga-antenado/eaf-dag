@@ -163,7 +163,7 @@ def main(os_list=None, destinatarios=None):
     # Grava CSV
     if resultados:
         with open(output_csv, mode="w", newline='', encoding="utf-8-sig") as outfile:
-            writer = csv.DictWriter(outfile, fieldnames=list(resultados[0].keys()))
+            writer = csv.DictWriter(outfile, fieldnames=list(resultados[0].keys()), delimiter=';') 
             writer.writeheader()
             writer.writerows(resultados)
         logger.info(f"📂 CSV gerado: {output_csv}")
