@@ -115,6 +115,7 @@ def main():
                 if not sql_result.empty:
                     # OS encontrada no SQL
                     sql_status = sql_result.iloc[0]['service_order_status']
+                    logger.info(f"Marcelo debug - OS: {clean_os_number}, Mongo: {mongo_status}, SQL: {sql_status}")
                     
                     # Verifica se os status são diferentes
                     if mongo_status != sql_status:
@@ -229,8 +230,8 @@ Segue o relatório do serviço "Dedo Duro" que monitora divergências entre Mong
         except Exception as e:
             logger.error(f"❌ Erro ao enviar e-mail: {e}")
 
-    # Envia o e-mail (sempre, mesmo se não houver divergências)
-    enviar_email_relatorio()
+    if len(arquivos_criados) > 0:
+        enviar_email_relatorio()
 
     logger.info("🕵️ Serviço Dedo Duro finalizado!")
 
