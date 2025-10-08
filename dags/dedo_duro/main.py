@@ -35,10 +35,10 @@ def main():
     MONGO_CONNECTION_STR = Variable.get("MONGO_CONNECTION_STR_EAF_PRD")
     
     # Configurações SQL Server
-    username = Variable.get("SQL_USERNAME")
-    password = Variable.get("SQL_PASSWORD")
-    server = Variable.get("SQL_SERVER")
-    database = Variable.get("SQL_DATABASE")
+    username = Variable.get("DBUSER")
+    password = Variable.get("DBPASSWORD")
+    server = Variable.get("DBSERVER")
+    database = Variable.get("DATABASE")
     
     # Configurações Email
     EMAIL_REMETENTE = Variable.get("EMAIL_REMETENTE_RELATORIO")
