@@ -86,6 +86,11 @@ def main():
     divergencias_status = []
     os_nao_encontradas = []
 
+    resultados = []
+    queries_update = []
+    nao_encontradas = []
+    lista_os_analisadas = []  # Para debug
+
     os_processadas = 0
     
     for doc in cursor:
@@ -99,10 +104,9 @@ def main():
             if not os_number or not mongo_status:
                 continue
                 
-            os_processadas += 1
-            clean_os_number = only_digits(str(os_number))
-            
-            # Busca a OS no SQL Server
+        os_processadas += 1
+        clean_os_number = only_digits(str(os_number))
+        lista_os_analisadas.append(clean_os_number)  # Para debug            # Busca a OS no SQL Server
             try:
                 query = f"""
                 SELECT service_order_status
@@ -184,7 +188,7 @@ def main():
             msg = EmailMessage()
             msg["Subject"] = f"🕵️ Dedo Duro - Relatório de Divergências {data_execucao.strftime('%d/%m/%Y %H:%M')}"
             msg["From"] = EMAIL_REMETENTE
-            msg["To"] = "marcelo.ferreira.terceirizado@eaf.org.br"
+            msg["To"] = "felipe.silva.terceirizado@eaf.org.br, marcelo.ferreira.terceirizado@eaf.org.br"
             
             corpo_email = f"""
 Prezado,
@@ -196,6 +200,9 @@ Segue o relatório do serviço "Dedo Duro" que monitora divergências entre Mong
 - OSs analisadas: {os_processadas}
 - Divergências de status: {len(divergencias_status)}
 - OSs não encontradas no SQL: {len(os_nao_encontradas)}
+
+🐛 DEBUG - OSs ANALISADAS:
+{', '.join(lista_os_analisadas) if lista_os_analisadas else 'Nenhuma OS encontrada'}
 
 {"📎 Arquivos em anexo:" if arquivos_criados else "✅ Nenhuma divergência encontrada neste período."}
 """

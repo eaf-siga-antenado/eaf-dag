@@ -76,6 +76,7 @@ def main():
 
     resultados = []
     os_manutencao_processadas = 0
+    lista_os_analisadas = []  # Para debug
     
     for doc in cursor_manutencao:
         customer_cpf = doc.get("customer", {}).get("cpf", "NULL")
@@ -98,6 +99,7 @@ def main():
                     
                 os_manutencao_processadas += 1
                 clean_os_number = only_digits(str(os_number))
+                lista_os_analisadas.append(clean_os_number)  # Para debug
                 
                 logger.info(f"🔍 Processando OS Manutenção: {clean_os_number}")
                 
@@ -173,7 +175,7 @@ def main():
             msg = EmailMessage()
             msg["Subject"] = f"🔧 Monitor Manutenção - OSs abertas < 90 dias da instalação {data_execucao.strftime('%d/%m/%Y %H:%M')}"
             msg["From"] = EMAIL_REMETENTE
-            msg["To"] = "marcelo.ferreira.terceirizado@eaf.org.br"
+            msg["To"] = "felipe.silva.terceirizado@eaf.org.br, marcelo.ferreira.terceirizado@eaf.org.br"
             
             corpo_email = f"""
 Prezado Marcelo,
@@ -190,6 +192,9 @@ abertas em menos de 90 dias após uma instalação.
 - OSs de "Manutenção - Problema técnico" criadas nas últimas 3 horas
 - No mesmo ticket, existe OS de "Agendamento de instalação" com status INSTALLED
 - Manutenção foi aberta em MENOS de 90 dias após o appointmentEndTime da instalação
+
+🐛 DEBUG - OSs ANALISADAS:
+{', '.join(lista_os_analisadas) if lista_os_analisadas else 'Nenhuma OS encontrada'}
 
 📎 Arquivo CSV em anexo com os detalhes.
 """
