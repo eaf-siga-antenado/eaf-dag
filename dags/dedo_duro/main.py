@@ -235,8 +235,8 @@ Segue o relatório do serviço "Dedo Duro" que monitora divergências entre Mong
         except Exception as e:
             logger.error(f"❌ Erro ao enviar e-mail: {e}")
 
-    #if len(arquivos_criados) > 0:
-    enviar_email_relatorio()
+    if len(arquivos_criados) > 0:
+        enviar_email_relatorio()
 
     logger.info("🕵️ Serviço Dedo Duro finalizado!")
 
