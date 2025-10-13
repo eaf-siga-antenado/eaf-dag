@@ -146,11 +146,6 @@ def main():
     # Fecha conexão
     mongo_client.close()
 
-    # Se não há resultados, encerra sem enviar email
-    if not resultados:
-        logger.info("✅ Nenhuma OS encontrada com os critérios especificados.")
-        return
-
     # Cria diretório de relatórios
     os.makedirs("reports", exist_ok=True)
     
@@ -158,16 +153,19 @@ def main():
     timestamp = data_execucao.strftime('%Y-%m-%d_%H-%M')
     relatorio_file = os.path.join("reports", f"monitor_manutencao_{timestamp}.csv")
 
-    # Gera CSV
-    with open(relatorio_file, mode="w", newline='', encoding="utf-8-sig") as outfile:
-        writer = csv.DictWriter(outfile, fieldnames=[
-            "nro_os_manutencao", "registered_at_manutencao", "customer_cpf", 
-            "os_instalacao_relacionada", "appointment_end_time", "dias_entre_instalacao_manutencao"
-        ], delimiter=';')
-        writer.writeheader()
-        writer.writerows(resultados)
-    
-    logger.info(f"📂 Arquivo gerado: {relatorio_file}")
+    # Gera CSV apenas se há resultados
+    if resultados:
+        with open(relatorio_file, mode="w", newline='', encoding="utf-8-sig") as outfile:
+            writer = csv.DictWriter(outfile, fieldnames=[
+                "nro_os_manutencao", "registered_at_manutencao", "customer_cpf", 
+                "os_instalacao_relacionada", "appointment_end_time", "dias_entre_instalacao_manutencao"
+            ], delimiter=';')
+            writer.writeheader()
+            writer.writerows(resultados)
+        logger.info(f"📂 Arquivo gerado: {relatorio_file}")
+    else:
+        logger.info("✅ Nenhuma OS encontrada com os critérios especificados.")
+        relatorio_file = None
 
     # Função para enviar e-mail
     def enviar_email_relatorio():
@@ -178,7 +176,7 @@ def main():
             msg["To"] = "felipe.silva.terceirizado@eaf.org.br, marcelo.ferreira.terceirizado@eaf.org.br"
             
             corpo_email = f"""
-Prezado Marcelo,
+Prezado,
 
 Segue o relatório do Monitor de Manutenção que identifica OSs de "Manutenção - Problema técnico" 
 abertas em menos de 90 dias após uma instalação.
@@ -196,7 +194,13 @@ abertas em menos de 90 dias após uma instalação.
 🐛 DEBUG - OSs ANALISADAS:
 {', '.join(lista_os_analisadas) if lista_os_analisadas else 'Nenhuma OS encontrada'}
 
-📎 Arquivo CSV em anexo com os detalhes.
+🔍 QUERY MONGODB PARA DEBUG (Compass):
+{{
+    "createdAt": {{ "$gte": ISODate("{tres_horas_atras.strftime('%Y-%m-%dT%H:%M:%S.000Z')}") }},
+    "services.serviceOrder.type": "Manutenção - Problema técnico"
+}}
+
+{"📎 Arquivo CSV em anexo com os detalhes." if resultados else "📎 Nenhum arquivo gerado (não há dados para o período)."}
 """
 
             if resultados:
@@ -208,16 +212,17 @@ abertas em menos de 90 dias após uma instalação.
 
             msg.set_content(corpo_email)
 
-            # Anexa o arquivo CSV
-            with open(relatorio_file, "rb") as f:
-                conteudo = f.read()
-                nome_arquivo = os.path.basename(relatorio_file)
-                msg.add_attachment(
-                    conteudo,
-                    maintype="application",
-                    subtype="octet-stream",
-                    filename=nome_arquivo,
-                )
+            # Anexa o arquivo CSV apenas se existir
+            if relatorio_file and resultados:
+                with open(relatorio_file, "rb") as f:
+                    conteudo = f.read()
+                    nome_arquivo = os.path.basename(relatorio_file)
+                    msg.add_attachment(
+                        conteudo,
+                        maintype="application",
+                        subtype="octet-stream",
+                        filename=nome_arquivo,
+                    )
 
             with smtplib.SMTP("smtp.office365.com", 587) as smtp:
                 smtp.starttls()
