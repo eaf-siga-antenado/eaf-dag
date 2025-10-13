@@ -106,41 +106,43 @@ def main():
                 
         os_processadas += 1
         clean_os_number = only_digits(str(os_number))
-        lista_os_analisadas.append(clean_os_number)  # Para debug            # Busca a OS no SQL Server
-            try:
-                query = f"""
-                SELECT service_order_status
-                FROM eaf_tvro.crm_ticket_data
-                WHERE service_order_number = '{clean_os_number}'
-                """
+        lista_os_analisadas.append(clean_os_number)  # Para debug
+        
+        # Busca a OS no SQL Server
+        try:
+            query = f"""
+            SELECT service_order_status
+            FROM eaf_tvro.crm_ticket_data
+            WHERE service_order_number = '{clean_os_number}'
+            """
+            
+            sql_result = pd.read_sql(query, engine)
+            
+            if not sql_result.empty:
+                # OS encontrada no SQL
+                sql_status = sql_result.iloc[0]['service_order_status']
+                logger.info(f"Marcelo debug - OS: {clean_os_number}, Mongo: {mongo_status}, SQL: {sql_status}")
                 
-                sql_result = pd.read_sql(query, engine)
-                
-                if not sql_result.empty:
-                    # OS encontrada no SQL
-                    sql_status = sql_result.iloc[0]['service_order_status']
-                    logger.info(f"Marcelo debug - OS: {clean_os_number}, Mongo: {mongo_status}, SQL: {sql_status}")
-                    
-                    # Verifica se os status são diferentes
-                    if mongo_status != sql_status:
-                        divergencias_status.append({
-                            "nro_os": clean_os_number,
-                            "status_mongo": mongo_status,
-                            "status_sql": sql_status,
-                            "created_at": created_at.strftime("%Y-%m-%d %H:%M:%S") if created_at else "NULL"
-                        })
-                        logger.info(f"📊 Divergência encontrada - OS: {clean_os_number}, Mongo: {mongo_status}, SQL: {sql_status}")
-                else:
-                    # OS não encontrada no SQL
-                    os_nao_encontradas.append({
+                # Verifica se os status são diferentes
+                if mongo_status != sql_status:
+                    divergencias_status.append({
                         "nro_os": clean_os_number,
                         "status_mongo": mongo_status,
+                        "status_sql": sql_status,
                         "created_at": created_at.strftime("%Y-%m-%d %H:%M:%S") if created_at else "NULL"
                     })
-                    logger.info(f"❌ OS não encontrada no SQL: {clean_os_number}")
-                    
-            except Exception as e:
-                logger.error(f"Erro ao consultar OS {clean_os_number} no SQL: {e}")
+                    logger.info(f"📊 Divergência encontrada - OS: {clean_os_number}, Mongo: {mongo_status}, SQL: {sql_status}")
+            else:
+                # OS não encontrada no SQL
+                os_nao_encontradas.append({
+                    "nro_os": clean_os_number,
+                    "status_mongo": mongo_status,
+                    "created_at": created_at.strftime("%Y-%m-%d %H:%M:%S") if created_at else "NULL"
+                })
+                logger.info(f"❌ OS não encontrada no SQL: {clean_os_number}")
+                
+        except Exception as e:
+            logger.error(f"Erro ao consultar OS {clean_os_number} no SQL: {e}")
 
     logger.info(f"✅ Processamento concluído: {os_processadas} OSs analisadas")
     logger.info(f"📊 Divergências de status: {len(divergencias_status)}")
