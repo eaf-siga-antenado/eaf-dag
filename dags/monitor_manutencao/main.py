@@ -190,8 +190,7 @@ def main():
             msg = EmailMessage()
             msg["Subject"] = f"🔧 Monitor Manutenção - OSs com appointmentEndTime > 90 dias {data_execucao.strftime('%d/%m/%Y %H:%M')}"
             msg["From"] = EMAIL_REMETENTE
-            msg["To"] = "marcelo.ferreira.terceirizado@eaf.org.br"
-            
+            msg["To"] = "marcelo.ferreira.terceirizado@eaf.org.br,felipe.silva.terceirizado@eaf.org.br"
             corpo_email = f"""
 Prezado Marcelo,
 
