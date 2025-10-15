@@ -52,17 +52,17 @@ def main():
     collection = db["tickets"]
 
     # Busca OS de Manutenção criadas nas últimas 3 horas
-    # Usando timezone Brasil para tudo, ajustando consulta MongoDB com -6h
+    # Usando timezone Brasil para tudo, ajustando consulta MongoDB com -3h (UTC-3)
     agora = datetime.now()  # Horário de Brasília
     tres_horas_atras = agora - timedelta(hours=3)
     noventa_dias_atras = agora - timedelta(days=90)
     
-    # Para consulta no MongoDB, ajusta -6h para compensar diferença de timezone
-    tres_horas_atras_mongo = tres_horas_atras - timedelta(hours=6)
+    # Para consulta no MongoDB, ajusta +3h para converter Brasília para UTC
+    tres_horas_atras_mongo = tres_horas_atras + timedelta(hours=3)
     
     logger.info(f"🇧🇷 Hora atual (Brasília): {agora}")
     logger.info(f"🔍 Buscando OSs criadas após: {tres_horas_atras} (Brasília)")
-    logger.info(f"📅 Consulta MongoDB ajustada: {tres_horas_atras_mongo}")
+    logger.info(f"📅 Consulta MongoDB (UTC): {tres_horas_atras_mongo}")
     logger.info(f"🔍 Verificando appointmentEndTime anterior a: {noventa_dias_atras}")
 
     # Busca OSs de Manutenção - Problema técnico
