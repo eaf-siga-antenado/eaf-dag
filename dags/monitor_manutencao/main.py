@@ -52,13 +52,14 @@ def main():
     collection = db["tickets"]
 
     # Busca OS de Manutenção criadas nas últimas 3 horas
-    # Usando timezone Brasil para tudo, ajustando consulta MongoDB com -3h (UTC-3)
+    # Usando timezone Brasil para tudo, ajustando consulta MongoDB 
     agora = datetime.now()  # Horário de Brasília
-    tres_horas_atras = agora - timedelta(hours=3)
+    tres_horas_atras = agora - timedelta(hours=3)  # 3h atrás em Brasília
     noventa_dias_atras = agora - timedelta(days=90)
     
-    # Para consulta no MongoDB, ajusta +3h para converter Brasília para UTC
-    tres_horas_atras_mongo = tres_horas_atras + timedelta(hours=3)
+    # Para consulta no MongoDB em UTC: 3h atrás Brasília + 3h diferença = hora atual UTC - 3h
+    agora_utc = datetime.now(timezone.utc)
+    tres_horas_atras_mongo = agora_utc - timedelta(hours=3)
     
     logger.info(f"🇧🇷 Hora atual (Brasília): {agora}")
     logger.info(f"🔍 Buscando OSs criadas após: {tres_horas_atras} (Brasília)")
@@ -207,7 +208,11 @@ que possuem service orders vizinhas com appointmentEndTime anterior a 90 dias at
 - Possui service order vizinha (mesmo ticket) com appointmentEndTime > 90 dias atrás
 - Data limite: {noventa_dias_atras.strftime('%d/%m/%Y %H:%M:%S')}
 
-🐛 DEBUG - OSs ANALISADAS:
+� NOTA TÉCNICA:
+- MongoDB armazena datas em UTC, enquanto o sistema opera em horário de Brasília (UTC-3)
+- A consulta é ajustada automaticamente: busca das {tres_horas_atras.strftime('%H:%M')} às {agora.strftime('%H:%M')} (Brasília) = {tres_horas_atras_mongo.strftime('%H:%M')} às {agora_utc.strftime('%H:%M')} (UTC)
+
+�🐛 DEBUG - OSs ANALISADAS:
 {', '.join(lista_os_analisadas) if lista_os_analisadas else 'Nenhuma OS encontrada'}
 
 🔍 QUERY MONGODB PARA DEBUG (Compass):
