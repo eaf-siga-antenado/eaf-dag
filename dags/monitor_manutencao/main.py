@@ -52,18 +52,24 @@ def main():
     collection = db["tickets"]
 
     # Busca OS de Manutenção criadas nas últimas 3 horas
-    agora = datetime.now(timezone.utc)
+    # Usando timezone Brasil para tudo, ajustando consulta MongoDB com -6h
+    agora = datetime.now()  # Horário de Brasília
     tres_horas_atras = agora - timedelta(hours=3)
     noventa_dias_atras = agora - timedelta(days=90)
     
-    logger.info(f"Buscando OSs de Manutenção criadas entre {tres_horas_atras} e {agora}...")
+    # Para consulta no MongoDB, ajusta -6h para compensar diferença de timezone
+    tres_horas_atras_mongo = tres_horas_atras - timedelta(hours=6)
+    
+    logger.info(f"🇧🇷 Hora atual (Brasília): {agora}")
+    logger.info(f"🔍 Buscando OSs criadas após: {tres_horas_atras} (Brasília)")
+    logger.info(f"📅 Consulta MongoDB ajustada: {tres_horas_atras_mongo}")
     logger.info(f"🔍 Verificando appointmentEndTime anterior a: {noventa_dias_atras}")
 
     # Busca OSs de Manutenção - Problema técnico
     cursor_manutencao = collection.find(
         {
             "createdAt": {
-                "$gte": tres_horas_atras,
+                "$gte": tres_horas_atras_mongo,
             },
             "services.serviceOrder.type": "Manutenção - Problema técnico"
         },
@@ -125,8 +131,8 @@ def main():
                         # Verifica se appointmentEndTime é anterior a 90 dias atrás (ou seja, > 90 dias atrás)
                         if isinstance(appointment_end_time, datetime):
                             # Ajusta timezone se necessário
-                            if appointment_end_time.tzinfo is None:
-                                appointment_end_time = appointment_end_time.replace(tzinfo=timezone.utc)
+                            if appointment_end_time.tzinfo is not None:
+                                appointment_end_time = appointment_end_time.replace(tzinfo=None)
                             
                             # Se appointmentEndTime é anterior a 90 dias atrás
                             if appointment_end_time < noventa_dias_atras:
@@ -192,7 +198,7 @@ Segue o relatório do Monitor de Manutenção que identifica OSs de "Manutençã
 que possuem service orders vizinhas com appointmentEndTime anterior a 90 dias atrás.
 
 📊 RESUMO DA EXECUÇÃO:
-- Data/Hora: {data_execucao.strftime('%d/%m/%Y %H:%M:%S')}
+- Data/Hora (Brasília): {data_execucao.strftime('%d/%m/%Y %H:%M:%S')}
 - OSs de Manutenção analisadas: {os_manutencao_processadas}
 - OSs encontradas com critério: {len(resultados)}
 
@@ -206,7 +212,7 @@ que possuem service orders vizinhas com appointmentEndTime anterior a 90 dias at
 
 🔍 QUERY MONGODB PARA DEBUG (Compass):
 {{
-    "createdAt": {{ "$gte": ISODate("{tres_horas_atras.strftime('%Y-%m-%dT%H:%M:%S.000Z')}") }},
+    "createdAt": {{ "$gte": ISODate("{tres_horas_atras_mongo.strftime('%Y-%m-%dT%H:%M:%S.000Z')}") }},
     "services.serviceOrder.type": "Manutenção - Problema técnico"
 }}
 
