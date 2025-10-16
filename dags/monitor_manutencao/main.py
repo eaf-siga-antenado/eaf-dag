@@ -253,8 +253,12 @@ que possuem service orders vizinhas com appointmentEndTime anterior a 90 dias at
         except Exception as e:
             logger.error(f"❌ Erro ao enviar e-mail: {e}")
 
-    # Envia o e-mail
-    enviar_email_relatorio()
+    # Envia o e-mail apenas se houver resultados
+    if resultados:
+        enviar_email_relatorio()
+        logger.info("📧 E-mail enviado com relatório anexo!")
+    else:
+        logger.info("📧 E-mail não enviado - nenhum resultado encontrado para reportar.")
 
     logger.info("🔧 Monitor de Manutenção finalizado!")
 
