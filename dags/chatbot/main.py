@@ -170,7 +170,7 @@ def main():
         # Insere em chunks para melhor performance
         chunk_size = 10000
         df_teste.to_sql("macro_chatbot", engine, if_exists='replace', index=False, 
-                       schema='eaf_tvro', dtype=tipos, chunksize=chunk_size, method='multi')
+                       schema='eaf_tvro', dtype=tipos, chunksize=chunk_size)
         
         # Estatísticas finais
         total_registros = len(df_teste)
