@@ -186,20 +186,9 @@ def main():
         # Preenche IBGEs faltantes com código padrão
         df_final['ibge'].fillna('2612554', inplace=True)
 
-        # Define tipos de dados para inserção
-        tipos = {
-            'phone': NVARCHAR(15),
-            'date': NVARCHAR(10),
-            'campaignName': NVARCHAR(100),
-            'city': NVARCHAR(50),
-            'status': NVARCHAR(20),
-            'id': NVARCHAR(50),
-            'ibge': NVARCHAR(7)
-        }
-
-        # Insere no banco de dados
+        # Insere no banco de dados (fiel ao notebook original)
         logger.info("💾 Inserindo dados na tabela macro_campanhas...")
-        df_final.to_sql("macro_campanhas", engine, if_exists='replace', index=False, schema='eaf_tvro', dtype=tipos)
+        df_final.to_sql("macro_campanhas", engine, if_exists='replace', index=False, schema='eaf_tvro')
         
         # Estatísticas finais
         campanhas_por_nome = df_final['campaignName'].value_counts()
@@ -215,7 +204,7 @@ def main():
                 msg = EmailMessage()
                 msg["Subject"] = f"📞 Extrator Campanhas Macro - Concluído {data_execucao.strftime('%d/%m/%Y %H:%M')}"
                 msg["From"] = EMAIL_REMETENTE
-                msg["To"] = "marcelo.ferreira.terceirizado@eaf.org.br"
+                msg["To"] = "ronaldy.santos@eaf.org.br"
                 
                 corpo_email = f"""
 Prezados,
@@ -271,7 +260,7 @@ Segue o relatório do Extrator de Campanhas Macro executado com sucesso.
             msg = EmailMessage()
             msg["Subject"] = f"❌ ERRO - Extrator Campanhas Macro {data_execucao.strftime('%d/%m/%Y %H:%M')}"
             msg["From"] = EMAIL_REMETENTE
-            msg["To"] = "marcelo.ferreira.terceirizado@eaf.org.br"
+            msg["To"] = "ronaldy.santos@eaf.org.br"
             
             corpo_email = f"""
 Prezados,
