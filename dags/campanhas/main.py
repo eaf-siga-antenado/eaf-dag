@@ -215,7 +215,7 @@ def main():
                 msg = EmailMessage()
                 msg["Subject"] = f"📞 Extrator Campanhas Macro - Concluído {data_execucao.strftime('%d/%m/%Y %H:%M')}"
                 msg["From"] = EMAIL_REMETENTE
-                msg["To"] = "marcelo.ferreira.terceirizado@eaf.org.br,felipe.silva.terceirizado@eaf.org.br"
+                msg["To"] = "marcelo.ferreira.terceirizado@eaf.org.br"
                 
                 corpo_email = f"""
 Prezados,
@@ -271,7 +271,7 @@ Segue o relatório do Extrator de Campanhas Macro executado com sucesso.
             msg = EmailMessage()
             msg["Subject"] = f"❌ ERRO - Extrator Campanhas Macro {data_execucao.strftime('%d/%m/%Y %H:%M')}"
             msg["From"] = EMAIL_REMETENTE
-            msg["To"] = "marcelo.ferreira.terceirizado@eaf.org.br,felipe.silva.terceirizado@eaf.org.br"
+            msg["To"] = "marcelo.ferreira.terceirizado@eaf.org.br"
             
             corpo_email = f"""
 Prezados,
@@ -303,7 +303,7 @@ Por favor, verificar os logs do Airflow para mais detalhes.
 campanhas_extrator_task = PythonVirtualenvOperator(
     task_id="campanhas_macro_extrator",
     python_callable=main,
-    requirements=["pandas==2.0.3", "requests==2.31.0", "sqlalchemy==2.0.19", "pyodbc==4.0.39"],
+    requirements=["pandas==1.5.3", "requests==2.31.0", "sqlalchemy==1.4.49", "pyodbc==4.0.39"],
     system_site_packages=True,
     dag=dag,
 )
