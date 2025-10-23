@@ -138,7 +138,7 @@ def main():
 
         # Formatação de data (fiel ao notebook)
         logger.info("📅 Formatando datas...")
-        df_teste['date'] = pd.to_datetime(df_teste['date'], format='mixed').dt.strftime("%Y-%m-%d %H:%M")
+        df_teste['date'] = pd.to_datetime(df_teste['date'], errors='coerce').dt.strftime("%Y-%m-%d %H:%M")
         
         # Remove duplicatas novamente após formatação de data
         len_antes = len(df_teste)
