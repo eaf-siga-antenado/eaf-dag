@@ -49,7 +49,7 @@ def main():
     try:
         # Conecta ao SQL Server
         logger.info("Conectando ao SQL Server...")
-        engine = create_engine(f'mssql+pyodbc://{DBUSER}:{DBPASSWORD}@{DBSERVER}:1433/{DATABASE}?driver=ODBC Driver 17 for SQL Server')
+        engine = create_engine(f'mssql+pyodbc://{DBUSER}:{DBPASSWORD}@{DBSERVER}:1433/{DATABASE}?driver=ODBC Driver 18 for SQL Server&TrustServerCertificate=yes')
         
         # Configuração da API
         url_base = "https://api-eaf.azurewebsites.net/tracking/campaigns"
