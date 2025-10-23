@@ -187,7 +187,7 @@ def main():
                 msg = EmailMessage()
                 msg["Subject"] = f"🤖 Extrator Chatbot Macro - Concluído {data_execucao.strftime('%d/%m/%Y %H:%M')}"
                 msg["From"] = EMAIL_REMETENTE
-                msg["To"] = "marcelo.ferreira.terceirizado@eaf.org.br"
+                msg["To"] = "ronaldy.santos@eaf.org.br"
                 
                 corpo_email = f"""
 Prezados,
@@ -256,7 +256,7 @@ Segue o relatório do Extrator de Chatbot Macro executado com sucesso.
             msg = EmailMessage()
             msg["Subject"] = f"❌ ERRO - Extrator Chatbot Macro {data_execucao.strftime('%d/%m/%Y %H:%M')}"
             msg["From"] = EMAIL_REMETENTE
-            msg["To"] = "marcelo.ferreira.terceirizado@eaf.org.br"
+            msg["To"] = "ronaldy.santos@eaf.org.br"
             
             corpo_email = f"""
 Prezados,
