@@ -97,7 +97,7 @@ def atualizar_instalacoes_cod_familia():
 
     UNION
 
-    SELECT 
+    SELECT
         CodFamilia
     FROM [eaf_tvro].[FaseExtra]
     WHERE 1=1
