@@ -93,6 +93,7 @@ def main(os_list=None, destinatarios=None, tipo_export=None):
             "protocol_number": only_digits(protocol.get("number")),
             "protocol_created_at": protocol.get("createdAt"),
             "protocol_channel": protocol.get("channel"),
+            "notation": service_order.get("notation"),
             "service_order_status": service_order.get("status"),
             "service_order_type": service_order.get("type"),
             "service_order_created_at": service_order.get("registeredAt"),
@@ -121,7 +122,7 @@ def main(os_list=None, destinatarios=None, tipo_export=None):
             "installer_response_representant_name": installer_response.get("representantName"),
             "installer_response_evidence": installer_response.get("evidence", {}).get("fileUrl"),
             "installer_response_technician_id": installer_response.get("technicianId"),
-            "installer_response_caid_equipment": installer_response.get("caidEquipamento"),
+            "isntaller_response_caid_equipment": installer_response.get("caidEquipamento"),
             "installer_response_scid_equipment": installer_response.get("scidEquipamento"),
             "installer_response_lat_long_installation": installer_response.get("latlongInstalacao"),
             "installer_response_pta": installer_response.get("pta")
@@ -218,6 +219,7 @@ def main(os_list=None, destinatarios=None, tipo_export=None):
                 row = {
                     "protocol_number": only_digits(protocol.get("number")),
                     "protocol_created_at": protocol.get("createdAt"),
+                    "notation": service_order.get("notation"),
                     "protocol_channel": protocol.get("channel"),
                     "service_order_status": service_order.get("status"),
                     "service_order_type": service_order.get("type"),
@@ -247,7 +249,7 @@ def main(os_list=None, destinatarios=None, tipo_export=None):
                     "installer_response_representant_name": installer_response.get("representantName"),
                     "installer_response_evidence": installer_response.get("evidence", {}).get("fileUrl"),
                     "installer_response_technician_id": installer_response.get("technicianId"),
-                    "installer_response_caid_equipment": installer_response.get("caidEquipamento"),
+                    "isntaller_response_caid_equipment": installer_response.get("caidEquipamento"),
                     "installer_response_scid_equipment": installer_response.get("scidEquipamento"),
                     "installer_response_lat_long_installation": installer_response.get("latlongInstalacao"),
                     "installer_response_pta": installer_response.get("pta")
