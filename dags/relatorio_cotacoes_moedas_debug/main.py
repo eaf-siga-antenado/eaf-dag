@@ -113,7 +113,7 @@ def cotacao_diaria():
 # Definição do DAG
 # ============================
 with DAG(
-    dag_id="cotacao_moeda_diaria",
+    dag_id="cotacao_moeda_diaria_debug",
     start_date=datetime(2025, 6, 1),
     schedule_interval="0 11,17 * * *",  # 2x por dia
     catchup=False,
