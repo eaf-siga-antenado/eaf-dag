@@ -143,7 +143,8 @@ def main():
     enviar_email_com_csv(
         output_file,
         [
-            "ana.fernandes@eaf.org.br"
+            "ana.fernandes@eaf.org.br",
+            "walter.nakagawa@eaf.org.br"
         ],
         assunto=f"Relatório Diário de horas trabalhas CRM - {data.strftime('%d/%m/%Y')}",
         corpo=f"""
