@@ -59,7 +59,7 @@ def extrair_dados_api():
     """
     resultado = session.execute(text(consulta_sql))
     ibge = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
-    df_completo = pd.DataFrame(df_completo['data'].tolist())
+    df_final = pd.DataFrame(df_final['data'].tolist())
     cidades_oficiais = ibge['nome_cidade'].tolist()
     def normalizar_cidade(cidade):
         if pd.isna(cidade):
@@ -74,15 +74,15 @@ def extrair_dados_api():
         if resultado:
             return resultado[0], resultado[1]
         return cidade, 0
-    cidades_unicas = df_completo['city'].unique()
+    cidades_unicas = df_final['city'].unique()
     mapeamento = {}
     for cidade in cidades_unicas:
         nome_normalizado, score = normalizar_cidade(cidade)
         mapeamento[cidade] = {'normalizado': nome_normalizado, 'similaridade': score}
-    df_completo['city_normalizado'] = df_completo['city'].map(lambda x: mapeamento[x]['normalizado'])
-    df_completo['similaridade'] = df_completo['city'].map(lambda x: mapeamento[x]['similaridade'])
-    df_baixa_similaridade = df_completo[df_completo['similaridade'] < 50]
-    df_completo = df_completo[df_completo['similaridade'] >= 50]
+    df_final['city_normalizado'] = df_final['city'].map(lambda x: mapeamento[x]['normalizado'])
+    df_final['similaridade'] = df_final['city'].map(lambda x: mapeamento[x]['similaridade'])
+    df_baixa_similaridade = df_final[df_final['similaridade'] < 50]
+    df_final = df_final[df_final['similaridade'] >= 50]
     tipos = {
         'phone': NVARCHAR(15),
         'date': NVARCHAR(10),
@@ -94,9 +94,9 @@ def extrair_dados_api():
         'ibge': NVARCHAR(7)
     }
     print('df completo')
-    print(df_completo.head())
-    df_completo.to_sql("macro_campanhas_airflow", engine, if_exists='replace', index=False, schema='eaf_tvro', dtype=tipos)
-    return df_baixa_similaridade, len(df_completo)
+    print(df_final.head())
+    df_final.to_sql("macro_campanhas_airflow", engine, if_exists='replace', index=False, schema='eaf_tvro', dtype=tipos)
+    return df_baixa_similaridade, len(df_final)
  
 def enviar_mensagem(**kwargs):
     import requests
