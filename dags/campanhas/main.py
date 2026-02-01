@@ -3,7 +3,7 @@ import pandas as pd
 from airflow import DAG
 from airflow.models import Variable
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from sqlalchemy import create_engine, text, NVARCHAR
 from airflow.operators.python_operator import PythonOperator, PythonVirtualenvOperator
 
@@ -20,10 +20,12 @@ def extrair_dados_api():
         "accept": "*/*",
         'Authorization': 's&dsdsa@123iudhasdiahsgd#@!'
     }
+
+    hoje = date.today().strftime("%Y-%m-%d")
+
     params = {
-        # "startDate": "2025-08-01",
-        "startDate": "2026-01-20",
-        "endDate": "2026-01-31",
+        "startDate": "2025-08-01",
+        "endDate": f"{hoje}",
         "take": 5000
     }
     skip = 0
@@ -122,7 +124,7 @@ default_args = {
 dag = DAG(
     'macro_campanhas',
     default_args=default_args,
-    schedule_interval='0 11 * * *',
+    schedule_interval='0 10 * * *',
     catchup=False
 )
 extrair_dados_api = PythonVirtualenvOperator(
