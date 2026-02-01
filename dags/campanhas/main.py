@@ -83,10 +83,10 @@ def extrair_dados_api():
     df_final['similaridade'] = df_final['city'].map(lambda x: mapeamento[x]['similaridade'])
     df_baixa_similaridade = df_final[df_final['similaridade'] < 50]
     df_final = df_final[df_final['similaridade'] >= 50]
-    df_completo = df_completo.merge(ibge, how='left', left_on='city_normalizado', right_on='nome_cidade')
-    df_completo.drop(columns=['nome_cidade', 'similaridade', 'city'], inplace=True)
-    df_completo.rename(columns={'city_normalizado': 'city'}, inplace=True)
-    df_completo.drop_duplicates(inplace=True)
+    df_final = df_final.merge(ibge, how='left', left_on='city_normalizado', right_on='nome_cidade')
+    df_final.drop(columns=['nome_cidade', 'similaridade', 'city'], inplace=True)
+    df_final.rename(columns={'city_normalizado': 'city'}, inplace=True)
+    df_final.drop_duplicates(inplace=True)
     tipos = {
         'phone': NVARCHAR(15),
         'date': NVARCHAR(10),
