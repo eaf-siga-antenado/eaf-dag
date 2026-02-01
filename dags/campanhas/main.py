@@ -99,6 +99,7 @@ def extrair_dados_api():
     }
     print('df completo')
     print(df_final.head())
+    df_final['date'] = pd.to_datetime(df_final['date'], format='mixed').dt.date
     df_final.to_sql("macro_campanhas_airflow", engine, if_exists='replace', index=False, schema='eaf_tvro', dtype=tipos)
     return df_baixa_similaridade, len(df_final)
  
