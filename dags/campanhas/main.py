@@ -133,7 +133,7 @@ default_args = {
 }
 
 dag = DAG(
-    'setup_instaladora',
+    'macro_campanhas',
     default_args=default_args,
     schedule_interval='0 11 * * *',
     catchup=False
@@ -158,7 +158,7 @@ tratamentos_envio_banco = PythonOperator(
 )
 
 enviar_mensagem = PythonOperator(
-    task_id='extrairasa_dados',
+    task_id='enviar_mensagem',
     python_callable=enviar_mensagem,
     dag=dag
 )
