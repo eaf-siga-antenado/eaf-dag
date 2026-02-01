@@ -8,6 +8,12 @@ from sqlalchemy import create_engine, text, NVARCHAR
 from airflow.operators.python_operator import PythonOperator, PythonVirtualenvOperator
 
 def extrair_dados_api():
+    import pandas as pd
+    from sqlalchemy.orm import sessionmaker
+    from airflow.models import Variable
+    from rapidfuzz import process, fuzz
+    from sqlalchemy import create_engine, text, NVARCHAR
+    
     url_base = "https://api-eaf.azurewebsites.net/tracking/campaigns"
     headers = {
         "accept": "*/*",
