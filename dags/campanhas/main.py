@@ -8,6 +8,7 @@ from sqlalchemy import create_engine, text, NVARCHAR
 from airflow.operators.python_operator import PythonOperator, PythonVirtualenvOperator
 
 def extrair_dados_api():
+    import requests
     import pandas as pd
     from sqlalchemy.orm import sessionmaker
     from airflow.models import Variable
