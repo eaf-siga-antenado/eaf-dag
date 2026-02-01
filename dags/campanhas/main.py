@@ -32,6 +32,8 @@ def extrair_dados_api():
         df = pd.DataFrame(data)
         df_final = pd.concat([df_final, df], ignore_index=True)
         skip += params["take"]
+    print('quantidade de registros extraidos da api:', len(df_final))
+    print(df_final.head())
     return df_final
 
 def extrair_dados_sql_server():
@@ -59,6 +61,8 @@ def extrair_dados_sql_server():
     """
     resultado = session.execute(text(consulta_sql))
     ibge = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
+    print('quantidade de registros extraidos do sql server:', len(ibge))
+    print(ibge.head())
     return ibge
 
 def tratamentos_envio_banco(**kwargs):
