@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text, NVARCHAR
 from airflow.operators.python_operator import PythonOperator, PythonVirtualenvOperator
 
+
 def extrair_dados_api():
     url_base = "https://api-eaf.azurewebsites.net/tracking/campaigns"
     headers = {
@@ -32,7 +33,8 @@ def extrair_dados_api():
         df = pd.DataFrame(data)
         df_final = pd.concat([df_final, df], ignore_index=True)
         skip += params["take"]
-    return df_final
+    return df_final.to_dict()
+
 
 def extrair_dados_sql_server():
     import pandas as pd
@@ -60,9 +62,10 @@ def extrair_dados_sql_server():
     """
     resultado = session.execute(text(consulta_sql))
     ibge = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
-    return ibge
+    return ibge.to_dict()
 
-def tratamentos_envio_banco(**kwargs):
+
+def tratamentos_envio_banco(df_completo_dict, ibge_dict):
     import pandas as pd
     from airflow.models import Variable
     from rapidfuzz import process, fuzz
@@ -74,9 +77,8 @@ def tratamentos_envio_banco(**kwargs):
     password = Variable.get('DBPASSWORD')
     engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}:1433/{database}?driver=ODBC Driver 18 for SQL Server')
 
-    ti = kwargs['ti']
-    df_completo = ti.xcom_pull(task_ids='task_extrair_dados_api')
-    ibge = ti.xcom_pull(task_ids='task_extrair_dados_sql_server')
+    df_completo = pd.DataFrame(df_completo_dict)
+    ibge = pd.DataFrame(ibge_dict)
 
     df_completo = pd.DataFrame(df_completo['data'].tolist())
 
@@ -123,13 +125,15 @@ def tratamentos_envio_banco(**kwargs):
 
     return df_baixa_similaridade.to_dict(), len(df_completo)
 
+
 def enviar_mensagem(**kwargs):
     import requests
     import pandas as pd
     from airflow.models import Variable
 
     ti = kwargs['ti']
-    df_dict, quantidade_registros = ti.xcom_pull(task_ids='task_tratamentos_envio_banco')
+    result = ti.xcom_pull(task_ids='task_tratamentos_envio_banco')
+    df_dict, quantidade_registros = result
     df = pd.DataFrame(df_dict)
 
     if quantidade_registros > 0:
@@ -171,7 +175,11 @@ task_tratamentos_envio_banco = PythonVirtualenvOperator(
     python_callable=tratamentos_envio_banco,
     dag=dag,
     requirements=['rapidfuzz'],
-    system_site_packages=True,
+    op_args=[
+        "{{ ti.xcom_pull(task_ids='task_extrair_dados_api') }}",
+        "{{ ti.xcom_pull(task_ids='task_extrair_dados_sql_server') }}"
+    ],
+    templates_dict=None,
 )
 
 task_enviar_mensagem = PythonOperator(
