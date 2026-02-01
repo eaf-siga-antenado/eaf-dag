@@ -62,6 +62,7 @@ def extrair_dados_sql_server():
     return ibge
 
 def tratamentos_envio_banco(**kwargs):
+    print('entrou na função tratamentos_envio_banco')
     import pandas as pd
     from airflow.models import Variable
     from rapidfuzz import process, fuzz
