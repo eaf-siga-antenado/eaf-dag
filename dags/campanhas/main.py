@@ -3,13 +3,14 @@ import pandas as pd
 from airflow import DAG
 from airflow.models import Variable
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text, NVARCHAR
 from airflow.operators.python_operator import PythonOperator, PythonVirtualenvOperator
 
 def extrair_dados_api():
     import requests
     import pandas as pd
+    from datetime import date
     from sqlalchemy.orm import sessionmaker
     from airflow.models import Variable
     from rapidfuzz import process, fuzz
