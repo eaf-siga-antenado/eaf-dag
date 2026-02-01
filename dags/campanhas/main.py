@@ -1,7 +1,6 @@
 import requests
 import pandas as pd
 from airflow import DAG
-from rapidfuzz import process, fuzz
 from airflow.models import Variable
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, timedelta
@@ -65,6 +64,8 @@ def extrair_dados_sql_server():
 
 def tratamentos_envio_banco(**kwargs):
     from airflow.models import Variable
+    from rapidfuzz import process, fuzz
+    
     server = Variable.get('DBSERVER')
     database = Variable.get('DATABASE')
     username = Variable.get('DBUSER')
