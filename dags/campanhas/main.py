@@ -1,12 +1,12 @@
 import requests
 import pandas as pd
 from airflow import DAG
+from rapidfuzz import process, fuzz
 from airflow.models import Variable
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text, NVARCHAR
 from airflow.operators.python_operator import PythonOperator, PythonVirtualenvOperator
-
 def extrair_dados_api():
     url_base = "https://api-eaf.azurewebsites.net/tracking/campaigns"
     headers = {
@@ -25,14 +25,12 @@ def extrair_dados_api():
         params["skip"] = skip
         response = requests.get(url_base, headers=headers, params=params)
         if response.status_code != 200:
-            print(f"Erro {response.status_code}: {response.text}")
             break
         data = response.json()
         if not data or len(data['data']) == 0:
             break
         df = pd.DataFrame(data)
         df_final = pd.concat([df_final, df], ignore_index=True)
-        print(len(df_final))
         skip += params["take"]
     return df_final
 
@@ -151,10 +149,11 @@ extrair_dados_sql_server = PythonOperator(
     dag=dag
 )
 
-tratamentos_envio_banco = PythonOperator(
+tratamentos_envio_banco = PythonVirtualenvOperator(
     task_id='tratamentos_envio_banco',
     python_callable=tratamentos_envio_banco,
-    dag=dag
+    dag=dag,
+    requirements=['rapidfuzz']
 )
 
 enviar_mensagem = PythonOperator(
