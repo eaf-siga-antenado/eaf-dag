@@ -153,11 +153,10 @@ extrair_dados_sql_server = PythonOperator(
     python_callable=extrair_dados_sql_server,
     dag=dag
 )
-tratamentos_envio_banco = PythonVirtualenvOperator(
+tratamentos_envio_banco = PythonOperator(
     task_id='tratamentos_envio_banco',
     python_callable=tratamentos_envio_banco,
-    dag=dag,
-    requirements=['rapidfuzz']
+    dag=dag
 )
 enviar_mensagem = PythonOperator(
     task_id='enviar_mensagem',
