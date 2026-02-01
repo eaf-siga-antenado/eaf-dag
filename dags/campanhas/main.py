@@ -21,7 +21,7 @@ def extrair_dados_api():
         'Authorization': api_token
     }
     params = {
-        "startDate": "2026-01-25",
+        "startDate": "2026-01-20",
         "endDate": "2026-01-31",
         "take": 5000
     }
