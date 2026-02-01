@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text, NVARCHAR
 from airflow.operators.python_operator import PythonOperator, PythonVirtualenvOperator
 
-
 def extrair_dados_api():
     url_base = "https://api-eaf.azurewebsites.net/tracking/campaigns"
     headers = {
@@ -34,7 +33,6 @@ def extrair_dados_api():
         df_final = pd.concat([df_final, df], ignore_index=True)
         skip += params["take"]
     return df_final
-
 
 def extrair_dados_sql_server():
     import pandas as pd
@@ -63,7 +61,6 @@ def extrair_dados_sql_server():
     resultado = session.execute(text(consulta_sql))
     ibge = pd.DataFrame(resultado.fetchall(), columns=resultado.keys())
     return ibge
-
 
 def tratamentos_envio_banco(**kwargs):
     import pandas as pd
@@ -126,7 +123,6 @@ def tratamentos_envio_banco(**kwargs):
 
     return df_baixa_similaridade.to_dict(), len(df_completo)
 
-
 def enviar_mensagem(**kwargs):
     import requests
     import pandas as pd
@@ -174,7 +170,8 @@ task_tratamentos_envio_banco = PythonVirtualenvOperator(
     task_id='task_tratamentos_envio_banco',
     python_callable=tratamentos_envio_banco,
     dag=dag,
-    requirements=['rapidfuzz']
+    requirements=['rapidfuzz'],
+    system_site_packages=True,
 )
 
 task_enviar_mensagem = PythonOperator(
