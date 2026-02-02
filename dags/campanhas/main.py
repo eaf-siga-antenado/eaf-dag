@@ -25,8 +25,7 @@ def extrair_dados_api():
     hoje = date.today().strftime("%Y-%m-%d")
 
     params = {
-        # "startDate": "2025-08-01",
-        "startDate": "2025-12-01",
+        "startDate": "2025-08-01",
         "endDate": f"{hoje}",
         "take": 5000
     }
