@@ -41,6 +41,7 @@ def extrair_dados_api():
             break
         df = pd.DataFrame(data)
         df_final = pd.concat([df_final, df], ignore_index=True)
+        print(f"Registros coletados até agora: {len(df_final)}")
         skip += params["take"]
     server = Variable.get('DBSERVER')
     database = Variable.get('DATABASE')
