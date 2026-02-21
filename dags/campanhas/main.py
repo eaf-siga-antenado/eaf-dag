@@ -127,7 +127,7 @@ default_args = {
 dag = DAG(
     'macro_campanhas',
     default_args=default_args,
-    schedule_interval='0 10 * * *',
+    schedule_interval='0 7 * * *',
     catchup=False
 )
 extrair_dados_api = PythonVirtualenvOperator(
