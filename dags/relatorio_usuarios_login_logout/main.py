@@ -144,7 +144,8 @@ def main():
         output_file,
         [
             "ana.fernandes@eaf.org.br",
-            "walter.nakagawa@eaf.org.br"
+            "walter.nakagawa@eaf.org.br",
+            "felipe.silva.terceirizado@eaf.org.br"
         ],
         assunto=f"Relatório Diário de horas trabalhas CRM - {data.strftime('%d/%m/%Y')}",
         corpo=f"""
