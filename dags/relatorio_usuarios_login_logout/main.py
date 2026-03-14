@@ -1,15 +1,14 @@
-import csv
 import os
+import csv
 import smtplib
-from datetime import datetime, timedelta
-from email.message import EmailMessage
-
-from airflow.models import Variable
 from airflow import DAG
+from email.message import EmailMessage
+from airflow.models import Variable
+from datetime import datetime, timedelta
 from airflow.operators.python_operator import PythonVirtualenvOperator
 
-
 default_args = {}
+
 dag = DAG(
     "relatorio_usuarios_login_logout",
     default_args=default_args,
@@ -18,10 +17,8 @@ dag = DAG(
     start_date=datetime(2025, 5, 21),
 )
 
-
 def main():
     from datetime import datetime, timedelta
-
     data = (datetime.now() - timedelta(days=1)).date()
     output_file = f"relatorio_login_logout_{data.strftime('%d-%m-%Y')}.csv"
 
@@ -39,15 +36,14 @@ def main():
 
         EMAIL_REMETENTE = Variable.get("EMAIL_REMETENTE_RELATORIO")
         SENHA_EMAIL = Variable.get("SENHA_EMAIL_RELATORIO")
+
         try:
-            # Criação da mensagem
             msg = EmailMessage()
             msg["Subject"] = assunto
             msg["From"] = EMAIL_REMETENTE
             msg["To"] = ", ".join(destinatarios)
             msg.set_content(corpo)
 
-            # Anexa o CSV
             with open(caminho_csv, "rb") as f:
                 conteudo = f.read()
                 nome_arquivo = os.path.basename(caminho_csv)
@@ -58,7 +54,6 @@ def main():
                     filename=nome_arquivo,
                 )
 
-            # Envio via STARTTLS
             with smtplib.SMTP("smtp.office365.com", 587) as smtp:
                 smtp.starttls()
                 smtp.login(EMAIL_REMETENTE, SENHA_EMAIL)
@@ -75,22 +70,25 @@ def main():
         import os
         import csv
 
+        OFFSET_BRASILIA = timedelta(hours=-3)
+
+        USUARIOS_IGNORADOS = {"ura@datametrica.com.br"} 
+
         MONGO_CONNECTION_STR = Variable.get("MONGO_CONNECTION_STR_EAF_PRD")
 
-        # Definir a data como o dia anterior à execução (1h da manhã)
         dia_seguinte = data + timedelta(days=1)
 
         client = MongoClient(MONGO_CONNECTION_STR)
         db = client["eaf"]
         collection = db["userLoginTimeTracking"]
 
-        # Buscar todos os eventos do dia anterior
         query = {
             "loginTime": {
                 "$gte": datetime.combine(data, datetime.min.time()),
                 "$lt": datetime.combine(dia_seguinte, datetime.min.time()),
             }
         }
+
         print(f"Query executada: {query}")
         print(f"Buscando eventos de login/logout do dia: {data}")
 
@@ -100,12 +98,16 @@ def main():
         eventos_por_usuario = {}
         for evento in eventos:
             username = evento.get("username", "NULL")
+
+            if username.lower() in USUARIOS_IGNORADOS:
+                continue
+
             if username not in eventos_por_usuario:
                 eventos_por_usuario[username] = []
             eventos_por_usuario[username].append(evento)
 
-        # Preparar CSV
         os.makedirs("reports", exist_ok=True)
+
         with open(output_file, mode="w", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile, delimiter=";")
             writer.writerow(["usuario", "data", "horario entrada", "horario saida"])
@@ -115,14 +117,15 @@ def main():
                 while i < len(eventos):
                     evento = eventos[i]
                     if evento["event"] == "LOGIN":
-                        entrada = evento["loginTime"]
+                        # [CORREÇÃO 2] Aplicar offset GMT-3 no horário de entrada
+                        entrada = evento["loginTime"] + OFFSET_BRASILIA
                         saida = None
 
-                        # Procurar próximo LOGOUT
                         for j in range(i + 1, len(eventos)):
                             if eventos[j]["event"] == "LOGOUT":
-                                saida = eventos[j]["loginTime"]
-                                i = j  # pular até o logout
+                                # [CORREÇÃO 2] Aplicar offset GMT-3 no horário de saída
+                                saida = eventos[j]["loginTime"] + OFFSET_BRASILIA
+                                i = j
                                 break
 
                         writer.writerow(
@@ -136,7 +139,7 @@ def main():
                     i += 1
 
         client.close()
-        print(f"\u2705 Relatório salvo em: {output_file}")
+        print(f"✅ Relatório salvo em: {output_file}")
         return output_file
 
     gerar_relatorio_login_logout(output_file, data)
@@ -145,7 +148,7 @@ def main():
         [
             "ana.fernandes@eaf.org.br",
             "walter.nakagawa@eaf.org.br",
-            "felipe.silva.terceirizado@eaf.org.br"
+            "felipe.silva.terceirizado@eaf.org.br",
         ],
         assunto=f"Relatório Diário de horas trabalhas CRM - {data.strftime('%d/%m/%Y')}",
         corpo=f"""
