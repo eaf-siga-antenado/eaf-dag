@@ -1,19 +1,18 @@
 import pandas as pd
 from airflow import DAG
-from datetime import date
 from datetime import datetime
-from datetime import timedelta
-from airflow.models import Variable
-from sqlalchemy import create_engine
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python import PythonOperator
 
-def local():
+def mostrar_diretorio():
     import os
-    print(os.getcwd())
-   
+    
+    print("Diretório atual (cwd):", os.getcwd())
+    print("Arquivos no diretório:")
+    print(os.listdir(os.getcwd()))
+
 default_args = {
     'start_date': datetime(2023, 8, 18, 6, 0, 0),
-    'retries': None
+    'retries': 0
 }
 
 dag = DAG(
@@ -23,10 +22,10 @@ dag = DAG(
     catchup=False
 )
 
-local = PythonOperator(
-    task_id='local',
-    python_callable=local,
+task_mostrar_diretorio = PythonOperator(
+    task_id='mostrar_diretorio',
+    python_callable=mostrar_diretorio,
     dag=dag
-) 
+)
 
-local 
+task_mostrar_diretorio
