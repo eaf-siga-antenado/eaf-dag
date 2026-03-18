@@ -12,7 +12,7 @@ def listar_arquivos_sftp(**context):
     yesterday = execution_date - timedelta(days=1)
     expected_file = yesterday.strftime("daily_trips-%Y_%m_%d.csv")
     remote_dir = Variable.get("SFTP_UBER_REMOTE_DIR", default_var="from_uber/trips")
-    hook = SSHHook(ssh_conn_id="conexao_uber")
+    hook = SSHHook(ssh_conn_id="uber_conexao")
 
     with hook.get_conn() as ssh:
         ssh.set_missing_host_key_policy(__import__("paramiko").RejectPolicy())
