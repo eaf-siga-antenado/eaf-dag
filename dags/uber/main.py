@@ -1,31 +1,49 @@
-import pandas as pd
+import logging
 from airflow import DAG
-from datetime import datetime
+from airflow.hooks.base import BaseHook
 from airflow.operators.python import PythonOperator
+from datetime import datetime
 
-def mostrar_diretorio():
-    import os
+log = logging.getLogger(__name__)
+
+def mostrar_conexao():
+    conn_id = "uber_conexao"
     
-    print("Diretório atual (cwd):", os.getcwd())
-    print("Arquivos no diretório:")
-    print(os.listdir(os.getcwd()))
+    # 🔌 Recupera a conexão do Airflow
+    conn = BaseHook.get_connection(conn_id)
+    
+    log.info("🔎 Connection ID: %s", conn.conn_id)
+    log.info("🌐 Host: %s", conn.host)
+    log.info("👤 Login: %s", conn.login)
+    log.info("🚪 Port: %s", conn.port)
+    log.info("🗂️ Schema: %s", conn.schema)
+    
+    # ⚠️ Cuidado com senha em logs
+    log.info("🔑 Password: %s", conn.password)
+
+    # 📦 Extras (JSON)
+    extras = conn.extra_dejson
+    log.info("📦 Extras:")
+    for key, value in extras.items():
+        log.info("  %s: %s", key, value)
+
 
 default_args = {
-    'start_date': datetime(2023, 8, 18, 6, 0, 0),
-    'retries': 0
+    "start_date": datetime(2024, 1, 1),
 }
 
-dag = DAG(
-    'uber',
+with DAG(
+    dag_id="debug_conexao_uber",
     default_args=default_args,
     schedule_interval=None,
-    catchup=False
-)
+    catchup=False,
+    tags=["debug"],
+) as dag:
 
-task_mostrar_diretorio = PythonOperator(
-    task_id='mostrar_diretorio',
-    python_callable=mostrar_diretorio,
-    dag=dag
-)
+    task_mostrar_conexao = PythonOperator(
+        task_id="mostrar_conexao",
+        python_callable=mostrar_conexao,
+    )
 
-task_mostrar_diretorio
+    task_mostrar_conexao
+    
