@@ -79,8 +79,8 @@ def listar_arquivos_sftp(**context):
 
 default_args = {
     "start_date": datetime(2024, 1, 1),
-    "retries": 1,
-    "retry_delay": timedelta(minutes=5),
+    "retries": None,
+    "retry_delay": None
 }
 
 with DAG(
