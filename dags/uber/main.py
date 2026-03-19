@@ -1,9 +1,10 @@
+import io
 import logging
+import paramiko
 from airflow import DAG
 from airflow.models import Variable
 from datetime import datetime, timedelta
 from airflow.operators.python import PythonOperator
-from airflow.providers.ssh.hooks.ssh import SSHHook
 
 log = logging.getLogger(__name__)
 
@@ -11,11 +12,41 @@ def listar_arquivos_sftp(**context):
     execution_date = context["logical_date"]
     yesterday = execution_date - timedelta(days=1)
     expected_file = yesterday.strftime("daily_trips-%Y_%m_%d.csv")
-    remote_dir = Variable.get("SFTP_UBER_REMOTE_DIR", default_var="from_uber/trips")
-    hook = SSHHook(ssh_conn_id="uber_conexao")
 
-    with hook.get_conn() as ssh:
-        ssh.set_missing_host_key_policy(__import__("paramiko").RejectPolicy())
+    # ──────────────────────────────────────────
+    # 🔐 Credenciais via Airflow Variables
+    # Cadastre em: Admin → Variables
+    # ──────────────────────────────────────────
+    host            = Variable.get("SFTP_HOST")
+    port            = int(Variable.get("SFTP_PORT", default_var=2222))
+    username        = Variable.get("SFTP_USER")
+    private_key_str = Variable.get("SFTP_PRIVATE_KEY")        # conteúdo do id_rsa
+    passphrase      = Variable.get("SFTP_KEY_PASSPHRASE", default_var=None) or None
+    remote_dir      = Variable.get("SFTP_UBER_REMOTE_DIR", default_var="from_uber/trips")
+
+    # ──────────────────────────────────────────
+    # 🔑 Carrega chave privada a partir da string
+    # ──────────────────────────────────────────
+    private_key = paramiko.RSAKey.from_private_key(
+        io.StringIO(private_key_str),
+        password=passphrase,
+    )
+
+    # ──────────────────────────────────────────
+    # 🔌 Conexão SSH → SFTP
+    # ──────────────────────────────────────────
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.RejectPolicy())
+
+    try:
+        ssh.connect(
+            hostname=host,
+            port=port,
+            username=username,
+            pkey=private_key,
+            look_for_keys=False,  # não tenta outras chaves do sistema
+            allow_agent=False,    # não usa ssh-agent
+        )
 
         with ssh.open_sftp() as sftp:
             log.info("Conectado ao SFTP. Listando '%s'...", remote_dir)
@@ -40,6 +71,8 @@ def listar_arquivos_sftp(**context):
                     f"Arquivo esperado não encontrado: {expected_file} "
                     f"(data de referência: {yesterday.date()})"
                 )
+    finally:
+        ssh.close()
 
 default_args = {
     "start_date": datetime(2024, 1, 1),
@@ -59,3 +92,4 @@ with DAG(
         task_id="listar_arquivos_sftp",
         python_callable=listar_arquivos_sftp,
     )
+    
