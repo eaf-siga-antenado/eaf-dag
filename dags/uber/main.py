@@ -9,20 +9,22 @@ from airflow.operators.python import PythonOperator
 log = logging.getLogger(__name__)
 
 def listar_arquivos_sftp(**context):
-    execution_date = context["logical_date"]
-    yesterday = execution_date - timedelta(days=1)
-    expected_file = yesterday.strftime("daily_trips-%Y_%m_%d.csv")
-
     # ──────────────────────────────────────────
     # 🔐 Credenciais via Airflow Variables
-    # Cadastre em: Admin → Variables
     # ──────────────────────────────────────────
     host            = Variable.get("SFTP_HOST")
-    port            = int(Variable.get("SFTP_PORT", default_var=2222))
+    port            = int(Variable.get("SFTP_PORT", default_var=22))
     username        = Variable.get("SFTP_USER")
-    private_key_str = Variable.get("SFTP_PRIVATE_KEY")        # conteúdo do id_rsa
+    private_key_str = Variable.get("SFTP_PRIVATE_KEY")
     passphrase      = Variable.get("SFTP_KEY_PASSPHRASE", default_var=None) or None
     remote_dir      = Variable.get("SFTP_UBER_REMOTE_DIR", default_var="from_uber/trips")
+
+    # ──────────────────────────────────────────
+    # 📅 Data lógica do DAG — garante idempotência
+    # ──────────────────────────────────────────
+    execution_date = context["logical_date"]
+    yesterday      = execution_date - timedelta(days=1)
+    expected_file  = yesterday.strftime("daily_trips-%Y_%m_%d.csv")
 
     # ──────────────────────────────────────────
     # 🔑 Carrega chave privada a partir da string
@@ -44,8 +46,8 @@ def listar_arquivos_sftp(**context):
             port=port,
             username=username,
             pkey=private_key,
-            look_for_keys=False,  # não tenta outras chaves do sistema
-            allow_agent=False,    # não usa ssh-agent
+            look_for_keys=False,
+            allow_agent=False,
         )
 
         with ssh.open_sftp() as sftp:
@@ -74,9 +76,10 @@ def listar_arquivos_sftp(**context):
     finally:
         ssh.close()
 
+
 default_args = {
     "start_date": datetime(2024, 1, 1),
-    "retries": None,
+    "retries": 1,
     "retry_delay": timedelta(minutes=5),
 }
 
@@ -92,4 +95,3 @@ with DAG(
         task_id="listar_arquivos_sftp",
         python_callable=listar_arquivos_sftp,
     )
-    
