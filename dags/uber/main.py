@@ -19,6 +19,13 @@ def listar_arquivos_sftp(**context):
     passphrase      = Variable.get("SFTP_KEY_PASSPHRASE", default_var=None) or None
     remote_dir      = Variable.get("SFTP_UBER_REMOTE_DIR", default_var="from_uber/trips")
 
+    print("host:", host)    
+    print("port:", port)
+    print("username:", username)
+    print("private_key_str:", private_key_str)
+    print("passphrase:", passphrase)
+    print("remote_dir:", remote_dir)
+
     # ──────────────────────────────────────────
     # 📅 Data lógica do DAG — garante idempotência
     # ──────────────────────────────────────────
