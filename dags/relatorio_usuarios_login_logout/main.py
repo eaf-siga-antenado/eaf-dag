@@ -72,7 +72,7 @@ def main():
 
         OFFSET_BRASILIA = timedelta(hours=-3)
 
-        USUARIOS_IGNORADOS = {"ura@datametrica.com.br"} 
+        USUARIOS_IGNORADOS = {"ura@datametrica.com.br", "URA Service"} 
 
         MONGO_CONNECTION_STR = Variable.get("MONGO_CONNECTION_STR_EAF_PRD")
 
@@ -146,9 +146,10 @@ def main():
     enviar_email_com_csv(
         output_file,
         [
-            "ana.fernandes@eaf.org.br",
-            "walter.nakagawa@eaf.org.br",
-            "felipe.silva.terceirizado@eaf.org.br",
+            # "ana.fernandes@eaf.org.br",
+            # "walter.nakagawa@eaf.org.br",
+            # "felipe.silva.terceirizado@eaf.org.br",
+            "ronaldy.santos@eaf.org.br"
         ],
         assunto=f"Relatório Diário de horas trabalhas CRM - {data.strftime('%d/%m/%Y')}",
         corpo=f"""
