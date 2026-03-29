@@ -9,9 +9,6 @@ from airflow.operators.python import PythonOperator
 log = logging.getLogger(__name__)
 
 def listar_arquivos_sftp(**context):
-    # ──────────────────────────────────────────
-    # 🔐 Credenciais via Airflow Variables
-    # ──────────────────────────────────────────
     host            = Variable.get("SFTP_HOST")
     port            = int(Variable.get("SFTP_PORT", default_var=22))
     username        = Variable.get("SFTP_USER")
@@ -28,24 +25,15 @@ def listar_arquivos_sftp(**context):
     print("passphrase:", passphrase)
     print("remote_dir:", remote_dir)
 
-    # ──────────────────────────────────────────
-    # 📅 Data lógica do DAG — garante idempotência
-    # ──────────────────────────────────────────
     execution_date = context["logical_date"]
     yesterday      = execution_date - timedelta(days=1)
     expected_file  = yesterday.strftime("daily_trips-%Y_%m_%d.csv")
 
-    # ──────────────────────────────────────────
-    # 🔑 Carrega chave privada a partir da string
-    # ──────────────────────────────────────────
     private_key = paramiko.RSAKey.from_private_key(
         io.StringIO(private_key_str),
         password=passphrase,
     )
 
-    # ──────────────────────────────────────────
-    # 🔌 Conexão SSH → SFTP
-    # ──────────────────────────────────────────
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.RejectPolicy())
 
