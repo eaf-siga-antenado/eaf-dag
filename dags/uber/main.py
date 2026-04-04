@@ -8,6 +8,23 @@ from airflow.operators.python import PythonOperator
 
 log = logging.getLogger(__name__)
 
+
+def _load_private_key(key_str, passphrase=None):
+    """Tenta carregar a chave privada detectando o tipo automaticamente."""
+    # Garante que \n literais virem quebras de linha reais
+    key_str = key_str.replace("\\n", "\n").strip()
+    key_file = io.StringIO(key_str)
+
+    for key_class in (paramiko.RSAKey, paramiko.Ed25519Key, paramiko.ECDSAKey):
+        try:
+            key_file.seek(0)
+            return key_class.from_private_key(key_file, password=passphrase)
+        except Exception:
+            continue
+
+    raise ValueError("Não foi possível carregar a chave privada. Verifique formato e passphrase.")
+
+
 def listar_arquivos_sftp(**context):
     host            = Variable.get("SFTP_HOST")
     port            = int(Variable.get("SFTP_PORT", default_var=22))
@@ -16,26 +33,15 @@ def listar_arquivos_sftp(**context):
     passphrase      = Variable.get("SFTP_KEY_PASSPHRASE", default_var=None) or None
     remote_dir      = Variable.get("SFTP_UBER_REMOTE_DIR", default_var="from_uber/trips")
 
-    print("quantidade de caracteres da chave privada:", len(private_key_str))
-
-    print("host:", host)    
-    print("port:", port)
-    print("username:", username)
-    print("private_key_str:", private_key_str)
-    print("passphrase:", passphrase)
-    print("remote_dir:", remote_dir)
-
     execution_date = context["logical_date"]
     yesterday      = execution_date - timedelta(days=1)
     expected_file  = yesterday.strftime("daily_trips-%Y_%m_%d.csv")
 
-    private_key = paramiko.RSAKey.from_private_key(
-        io.StringIO(private_key_str),
-        password=passphrase,
-    )
+    private_key = _load_private_key(private_key_str, passphrase)
 
     ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.RejectPolicy())
+    # >>> CORREÇÃO PRINCIPAL: AutoAddPolicy em vez de RejectPolicy
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     try:
         ssh.connect(
@@ -46,29 +52,17 @@ def listar_arquivos_sftp(**context):
             look_for_keys=False,
             allow_agent=False,
         )
-
         with ssh.open_sftp() as sftp:
             log.info("Conectado ao SFTP. Listando '%s'...", remote_dir)
-
-            try:
-                files = sftp.listdir(remote_dir)
-            except FileNotFoundError:
-                raise FileNotFoundError(
-                    f"Diretório remoto não encontrado: {remote_dir}"
-                )
-
-            log.info("Total de arquivos encontrados: %d", len(files))
-            for f in files:
-                log.info("  • %s", f)
-
-            log.info("Procurando arquivo esperado: %s", expected_file)
+            files = sftp.listdir(remote_dir)
+            log.info("Total de arquivos: %d", len(files))
 
             if expected_file in files:
-                log.info("✅ Arquivo encontrado: %s", expected_file)
+                log.info("Arquivo encontrado: %s", expected_file)
             else:
                 raise FileNotFoundError(
-                    f"Arquivo esperado não encontrado: {expected_file} "
-                    f"(data de referência: {yesterday.date()})"
+                    f"Arquivo não encontrado: {expected_file} "
+                    f"(referência: {yesterday.date()})"
                 )
     finally:
         ssh.close()
@@ -76,7 +70,7 @@ def listar_arquivos_sftp(**context):
 
 default_args = {
     "start_date": datetime(2024, 1, 1),
-    "retries": 0
+    "retries": 0,
 }
 
 with DAG(
@@ -86,8 +80,7 @@ with DAG(
     catchup=False,
     tags=["sftp", "uber"],
 ) as dag:
-
-    task_listar_sftp = PythonOperator(
+    PythonOperator(
         task_id="listar_arquivos_sftp",
         python_callable=listar_arquivos_sftp,
     )
