@@ -193,11 +193,11 @@ def _salvar_df(df: pd.DataFrame, nome: str) -> str:
     if df is None or df.empty:
         raise AirflowException(f"DataFrame {nome} está vazio. Abortando.")
     caminho = _parquet_path(nome)
-    # Converte colunas com objetos complexos para string para o parquet
     df_safe = df.copy()
     for col in df_safe.columns:
         if df_safe[col].dtype == object:
-            df_safe[col] = df_safe[col].astype(str)
+            # Substitui NaN por None para evitar a string "nan" no banco
+            df_safe[col] = df_safe[col].where(df_safe[col].notna(), None)
     df_safe.to_parquet(caminho, index=False)
     logger.info("DataFrame %s salvo em %s (%s linhas)", nome, caminho, len(df_safe))
     return caminho
@@ -213,10 +213,13 @@ def _carregar_sql(nome: str, tabela: str) -> int:
     if df.empty:
         raise AirflowException(f"DataFrame {nome} lido do parquet está vazio")
 
-    server = os.getenv("DBSERVER") or Variable.get("DBSERVER", default_var=None)
-    database = os.getenv("DATABASE") or Variable.get("DATABASE", default_var=None)
-    username = os.getenv("DBUSER") or Variable.get("DBUSER", default_var=None)
-    password = os.getenv("DBPASSWORD") or Variable.get("DBPASSWORD", default_var=None)
+    # Credenciais obtidas exclusivamente de Variables (mais seguro que os.getenv)
+    server = Variable.get("DBSERVER")
+    database = Variable.get("DATABASE")
+    username = Variable.get("DBUSER")
+    password = Variable.get("DBPASSWORD")
+    # Porta configurável (padrão 1433)
+    porta = Variable.get("DBPORT", default_var="1433")
 
     if not all([server, database, username, password]):
         raise AirflowException(
@@ -225,7 +228,7 @@ def _carregar_sql(nome: str, tabela: str) -> int:
 
     try:
         engine = create_engine(
-            f"mssql+pyodbc://{username}:{password}@{server}:1433/{database}"
+            f"mssql+pyodbc://{username}:{password}@{server}:{porta}/{database}"
             f"?driver=ODBC Driver 18 for SQL Server"
         )
         df.to_sql(tabela, engine, if_exists="replace", index=False, chunksize=1000)
@@ -256,10 +259,9 @@ def onfly_etl():
     # -----------------------------------------------------------------------
     @task(retries=5, retry_delay=timedelta(minutes=2))
     def autenticar() -> str:
-        client_id = os.getenv("client_id") or Variable.get("onfly_client_id", default_var=None)
-        client_secret = os.getenv("client_secret") or Variable.get(
-            "onfly_client_secret", default_var=None
-        )
+        # Credenciais obtidas de Variables (mais seguro)
+        client_id = Variable.get("onfly_client_id")
+        client_secret = Variable.get("onfly_client_secret")
 
         if not client_id or not client_secret:
             raise AirflowException("client_id/client_secret não configurados")
@@ -646,7 +648,8 @@ def onfly_etl():
 
     @task
     def load_aereo(_: str) -> int:
-        return _carregar_sql("aereo", "aereo_novo_novo")
+        # CORREÇÃO: nome da tabela corrigido para "aereo_novo"
+        return _carregar_sql("aereo", "aereo_novo")
 
     # -----------------------------------------------------------------------
     # 8. Ônibus
@@ -895,14 +898,14 @@ def onfly_etl():
     @task
     def extract_transform_fatura(token: str) -> str:
         headers = _get_headers(token)
-        url = f"{BASE_URL}/financial/invoice/list/invoice?iclude=details"
+        # CORREÇÃO: typo "iclude" corrigido para "include"
+        url = f"{BASE_URL}/financial/invoice/list/invoice?include=details"
         registros = coletar_todas_paginas(url, headers, "fatura")
 
         df = pd.DataFrame(registros)
         if "amount" in df.columns:
-            df["amount"] = (pd.to_numeric(df["amount"], errors="coerce") / 100).map(
-                "{:,.2f}".format
-            )
+            # CORREÇÃO: manter como float, sem formatar para string
+            df["amount"] = pd.to_numeric(df["amount"], errors="coerce") / 100
         df.drop(columns=["description", "invoicedCompany"], inplace=True, errors="ignore")
         return _salvar_df(df, "fatura")
 
