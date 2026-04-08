@@ -215,9 +215,9 @@ def _carregar_sql(nome: str, tabela: str) -> int:
 
     # Credenciais obtidas exclusivamente de Variables (mais seguro que os.getenv)
     server = Variable.get("DBSERVER")
-    database = Variable.get("DATABASE")
-    username = Variable.get("DBUSER")
-    password = Variable.get("DBPASSWORD")
+    database = Variable.get("DATABASE-RH")
+    username = Variable.get("DBUSER-RH")
+    password = Variable.get("DBPASSWORD-RH")
     # Porta configurável (padrão 1433)
     porta = Variable.get("DBPORT", default_var="1433")
 
@@ -260,8 +260,8 @@ def onfly_etl():
     @task(retries=5, retry_delay=timedelta(minutes=2))
     def autenticar() -> str:
         # Credenciais obtidas de Variables (mais seguro)
-        client_id = Variable.get("onfly_client_id")
-        client_secret = Variable.get("onfly_client_secret")
+        client_id = Variable.get("client_id_onfly")
+        client_secret = Variable.get("client_secret_onfly")
 
         if not client_id or not client_secret:
             raise AirflowException("client_id/client_secret não configurados")
