@@ -3,7 +3,6 @@ DAG: onfly_etl
 Descrição: Extrai dados da API Onfly, transforma e carrega no SQL Server.
 Cada endpoint/informação é uma task independente, com tratamento de erros,
 retries automáticos do Airflow e logging estruturado.
-
 Fluxo:
     autenticar
         ├── extract_transform_colaboradores   -> load_colaboradores
@@ -17,32 +16,26 @@ Fluxo:
         ├── extract_transform_fatura          -> load_fatura
         └── extract_transform_creditos        -> load_creditos
 """
-
 from __future__ import annotations
-
+import json
 import logging
 import os
 import time
 from datetime import datetime, timedelta
 from typing import Any
-
 import pandas as pd
 import requests
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowException
 from airflow.models import Variable
 from sqlalchemy import create_engine
-
 logger = logging.getLogger(__name__)
-
 # ---------------------------------------------------------------------------
 # Configurações
 # ---------------------------------------------------------------------------
 TMP_DIR = "/tmp/onfly"
 os.makedirs(TMP_DIR, exist_ok=True)
-
 BASE_URL = "https://api.onfly.com.br"
-
 DEFAULT_ARGS = {
     "owner": "data-engineering",
     "depends_on_past": False,
@@ -52,8 +45,6 @@ DEFAULT_ARGS = {
     "max_retry_delay": timedelta(minutes=30),
     "email_on_failure": False,
 }
-
-
 # ---------------------------------------------------------------------------
 # Funções utilitárias (não são tasks) — paginação com retry/backoff
 # ---------------------------------------------------------------------------
@@ -103,8 +94,6 @@ def fetch_pagina(url: str, headers: dict, pagina: int, max_tentativas: int = 10)
             time.sleep(espera)
     logger.error("Página %s falhou após %s tentativas", pagina, max_tentativas)
     return None
-
-
 def coletar_todas_paginas(
     url: str, headers: dict, nome_endpoint: str = "endpoint", pausa: float = 0.3
 ) -> list[dict]:
@@ -114,39 +103,32 @@ def coletar_todas_paginas(
     página ficar sem ser coletada (dados incompletos não devem ir pro banco).
     """
     logger.info("=== Coletando: %s ===", nome_endpoint)
-
     primeira = fetch_pagina(url, headers, 1)
     if primeira is None or "meta" not in primeira:
         raise AirflowException(
             f"Falha ao obter a primeira página de {nome_endpoint}. "
             f"Verifique o token, a URL e a conectividade."
         )
-
     total_paginas = primeira["meta"]["pagination"]["total_pages"]
     total_esperado = primeira["meta"]["pagination"].get("total", 0)
     logger.info(
         "Total de páginas: %s | Registros esperados: %s",
         total_paginas, total_esperado,
     )
-
     todos_registros: list[dict] = []
     paginas_falhadas: list[int] = []
-
     for pagina in range(1, total_paginas + 1):
         resultado = primeira if pagina == 1 else fetch_pagina(url, headers, pagina)
-
         if resultado is None or "data" not in resultado:
             logger.warning("Página %s marcada para retry final", pagina)
             paginas_falhadas.append(pagina)
             continue
-
         todos_registros.extend(resultado["data"])
         logger.info(
             "Página %s/%s processada (%s registros)",
             pagina, total_paginas, len(resultado["data"]),
         )
         time.sleep(pausa)
-
     # Retry final
     if paginas_falhadas:
         logger.info(
@@ -164,55 +146,61 @@ def coletar_todas_paginas(
                 "Página %s recuperada (%s registros)",
                 pagina, len(resultado["data"]),
             )
-
         if ainda_falhadas:
             raise AirflowException(
                 f"[{nome_endpoint}] {len(ainda_falhadas)} página(s) NÃO "
                 f"foram coletadas: {ainda_falhadas}. Abortando para não "
                 f"carregar dados incompletos."
             )
-
     logger.info(
         "Total coletado: %s registros (esperado: %s)",
         len(todos_registros), total_esperado,
     )
     return todos_registros
-
-
 def _get_headers(token: str) -> dict:
     return {"Authorization": token}
-
-
 def _parquet_path(nome: str) -> str:
     return os.path.join(TMP_DIR, f"{nome}.parquet")
-
-
+def _normalizar_celula(x: Any) -> Any:
+    """
+    Normaliza um valor de célula para compatibilidade com PyArrow/Parquet:
+    - listas e dicts são serializados para string JSON
+    - valores nulos são convertidos para None
+    - demais tipos são retornados sem alteração
+    """
+    if isinstance(x, (list, dict)):
+        return json.dumps(x, ensure_ascii=False)
+    try:
+        if pd.isnull(x):
+            return None
+    except (TypeError, ValueError):
+        pass
+    return x
 def _salvar_df(df: pd.DataFrame, nome: str) -> str:
     """Salva DataFrame em parquet e retorna caminho. Usado para trafegar
-    entre tasks sem sobrecarregar o XCom."""
+    entre tasks sem sobrecarregar o XCom.
+
+    Aplica _normalizar_celula em todas as colunas do tipo object para
+    garantir que listas, dicts e tipos misturados não causem erro no PyArrow.
+    """
     if df is None or df.empty:
         raise AirflowException(f"DataFrame {nome} está vazio. Abortando.")
     caminho = _parquet_path(nome)
     df_safe = df.copy()
     for col in df_safe.columns:
         if df_safe[col].dtype == object:
-            # Substitui NaN por None para evitar a string "nan" no banco
-            df_safe[col] = df_safe[col].where(df_safe[col].notna(), None)
+            df_safe[col] = df_safe[col].apply(_normalizar_celula)
     df_safe.to_parquet(caminho, index=False)
     logger.info("DataFrame %s salvo em %s (%s linhas)", nome, caminho, len(df_safe))
     return caminho
-
-
 def _carregar_sql(nome: str, tabela: str) -> int:
     """Lê o parquet do endpoint e grava no SQL Server."""
     caminho = _parquet_path(nome)
     if not os.path.exists(caminho):
         raise AirflowException(f"Parquet não encontrado: {caminho}")
-
     df = pd.read_parquet(caminho)
     if df.empty:
         raise AirflowException(f"DataFrame {nome} lido do parquet está vazio")
-
     # Credenciais obtidas exclusivamente de Variables (mais seguro que os.getenv)
     server = Variable.get("DBSERVER")
     database = Variable.get("DATABASE-RH")
@@ -220,12 +208,10 @@ def _carregar_sql(nome: str, tabela: str) -> int:
     password = Variable.get("DBPASSWORD-RH")
     # Porta configurável (padrão 1433)
     porta = Variable.get("DBPORT", default_var="1433")
-
     if not all([server, database, username, password]):
         raise AirflowException(
             "Credenciais do SQL Server ausentes (DBSERVER/DATABASE/DBUSER/DBPASSWORD)"
         )
-
     try:
         engine = create_engine(
             f"mssql+pyodbc://{username}:{password}@{server}:{porta}/{database}"
@@ -234,11 +220,8 @@ def _carregar_sql(nome: str, tabela: str) -> int:
         df.to_sql(tabela, engine, if_exists="replace", index=False, chunksize=1000)
     except Exception as e:
         raise AirflowException(f"Falha ao gravar tabela {tabela}: {e}") from e
-
     logger.info("Carregou %s linhas em %s", len(df), tabela)
     return len(df)
-
-
 # ---------------------------------------------------------------------------
 # DAG
 # ---------------------------------------------------------------------------
@@ -253,7 +236,6 @@ def _carregar_sql(nome: str, tabela: str) -> int:
     tags=["onfly", "api", "sqlserver"],
 )
 def onfly_etl():
-
     # -----------------------------------------------------------------------
     # 1. Autenticação
     # -----------------------------------------------------------------------
@@ -262,30 +244,24 @@ def onfly_etl():
         # Credenciais obtidas de Variables (mais seguro)
         client_id = Variable.get("client_id_onfly")
         client_secret = Variable.get("client_secret_onfly")
-
         if not client_id or not client_secret:
             raise AirflowException("client_id/client_secret não configurados")
-
         payload = {
             "grant_type": "client_credentials",
             "scope": "*",
             "client_id": client_id,
             "client_secret": client_secret,
         }
-
         try:
             r = requests.post(f"{BASE_URL}/oauth/token", data=payload, timeout=30)
             r.raise_for_status()
         except requests.exceptions.RequestException as e:
             raise AirflowException(f"Falha na autenticação Onfly: {e}") from e
-
         token = r.json().get("access_token")
         if not token:
             raise AirflowException("access_token não retornado pela API Onfly")
-
         logger.info("Autenticado com sucesso na Onfly")
         return token
-
     # -----------------------------------------------------------------------
     # 2. Colaboradores
     # -----------------------------------------------------------------------
@@ -294,7 +270,6 @@ def onfly_etl():
         headers = _get_headers(token)
         url = f"{BASE_URL}/employees?include=document"
         registros = coletar_todas_paginas(url, headers, "colaboradores")
-
         lista = []
         for c in registros:
             pos = c.get("position") or {}
@@ -306,7 +281,6 @@ def onfly_etl():
                 f"{(d.get('type') or {}).get('label', '')}:{d.get('label', '')}"
                 for d in all_docs
             )
-
             lista.append({
                 "id": c.get("id"), "name": c.get("name"),
                 "username": c.get("username"), "email": c.get("email"),
@@ -340,14 +314,11 @@ def onfly_etl():
                 "document_updatedAt": doc.get("updatedAt"),
                 "allDocuments": all_docs_str,
             })
-
         df = pd.DataFrame(lista)
         return _salvar_df(df, "colaboradores")
-
     @task
     def load_colaboradores(_: str) -> int:
         return _carregar_sql("colaboradores", "colaboradores_novo")
-
     # -----------------------------------------------------------------------
     # 3. Centro de custo
     # -----------------------------------------------------------------------
@@ -366,11 +337,9 @@ def onfly_etl():
             "createdAt": cc.get("createdAt"), "updatedAt": cc.get("updatedAt"),
         } for cc in registros])
         return _salvar_df(df, "centro_custo")
-
     @task
     def load_centro_custo(_: str) -> int:
         return _carregar_sql("centro_custo", "centro_custo_novo")
-
     # -----------------------------------------------------------------------
     # 4. Grupos
     # -----------------------------------------------------------------------
@@ -387,11 +356,9 @@ def onfly_etl():
             "createdAt": g.get("createdAt"), "updatedAt": g.get("updatedAt"),
         } for g in registros]).explode("employeesIds")
         return _salvar_df(df, "grupo")
-
     @task
     def load_grupo(_: str) -> int:
         return _carregar_sql("grupo", "grupo_novo")
-
     # -----------------------------------------------------------------------
     # 5. Despesas
     # -----------------------------------------------------------------------
@@ -431,18 +398,15 @@ def onfly_etl():
             "tagsIds": ", ".join(map(str, d.get("tagsIds") or [])),
             "createdAt": d.get("createdAt"), "updatedAt": d.get("updatedAt"),
         } for d in registros]
-
         df = pd.DataFrame(lista)
         df["amount"] = pd.to_numeric(df["amount"], errors="coerce") / 100
         df["afterUpdateBlueValue"] = pd.to_numeric(df["afterUpdateBlueValue"], errors="coerce") / 100
         df["beforeUpdateBlueValue"] = pd.to_numeric(df["beforeUpdateBlueValue"], errors="coerce") / 100
         df["protocol"] = df["protocol"].astype(str).str.replace("#", "", regex=False)
         return _salvar_df(df, "despesa")
-
     @task
     def load_despesa(_: str) -> int:
         return _carregar_sql("despesa", "despesa_novo")
-
     # -----------------------------------------------------------------------
     # 6. Automóveis
     # -----------------------------------------------------------------------
@@ -451,7 +415,6 @@ def onfly_etl():
         headers = _get_headers(token)
         url = f"{BASE_URL}/travel/order/auto-order?include=drivers.user,client"
         registros = coletar_todas_paginas(url, headers, "automóveis")
-
         lista = []
         for a in registros:
             client = (a.get("client") or {}).get("data") or {}
@@ -462,7 +425,6 @@ def onfly_etl():
             drivers_emails = "; ".join(str(d.get("email") or "") for d in drivers)
             drivers_documentos = "; ".join(str(d.get("document") or "") for d in drivers)
             drivers_user_ids = "; ".join(str(d.get("userId") or "") for d in drivers)
-
             lista.append({
                 "id": a.get("id"), "oldId": a.get("oldId"),
                 "protocol": a.get("protocol"), "bookingId": a.get("bookingId"),
@@ -521,17 +483,14 @@ def onfly_etl():
                 "drivers_documentos": drivers_documentos,
                 "drivers_userIds": drivers_user_ids,
             })
-
         df = pd.DataFrame(lista)
         for col in ["amount", "netAmount", "amountPerDay", "dailyAmount", "refunds"]:
             df[col] = pd.to_numeric(df[col], errors="coerce") / 100
         df["protocol"] = df["protocol"].astype(str).str.replace("#", "", regex=False)
         return _salvar_df(df, "automovel")
-
     @task
     def load_automovel(_: str) -> int:
         return _carregar_sql("automovel", "automovel_novo")
-
     # -----------------------------------------------------------------------
     # 7. Viagens aéreas
     # -----------------------------------------------------------------------
@@ -540,19 +499,16 @@ def onfly_etl():
         headers = _get_headers(token)
         url = f"{BASE_URL}/travel/order/fly-order/?include=travellers"
         registros = coletar_todas_paginas(url, headers, "viagens aéreas")
-
         lista = []
         for v in registros:
             outbound = v.get("outbound") or {}
             outbound_cia = outbound.get("cia") or {}
             inbound = v.get("inbound") or {}
             inbound_cia = inbound.get("cia") or {}
-
             tickets_out = v.get("ticketOutbound") or []
             tickets_in = v.get("ticketInbound") or []
             tickets_out_str = "; ".join(str(t.get("ticket") or "") for t in tickets_out)
             tickets_in_str = "; ".join(str(t.get("ticket") or "") for t in tickets_in)
-
             travellers = ((v.get("travellers") or {}).get("data")) or []
             trav_nomes = "; ".join(str(t.get("name") or "") for t in travellers)
             trav_emails = "; ".join(str(t.get("email") or "") for t in travellers)
@@ -560,7 +516,6 @@ def onfly_etl():
             trav_user_ids = "; ".join(str(t.get("userId") or "") for t in travellers)
             trav_best_price = "; ".join(str(t.get("bestPrice") or "") for t in travellers)
             trav_nationalities = "; ".join(str(t.get("nationality") or "") for t in travellers)
-
             lista.append({
                 "id": v.get("id"), "oldId": v.get("oldId"),
                 "protocol": v.get("protocol"), "bookingId": v.get("bookingId"),
@@ -634,7 +589,6 @@ def onfly_etl():
                 "travellers_bestPrice": trav_best_price,
                 "travellers_nationalities": trav_nationalities,
             })
-
         df = pd.DataFrame(lista)
         cols_divide = [
             "amount", "netAmount", "refunds", "discount", "additionalCharge",
@@ -645,12 +599,9 @@ def onfly_etl():
             df[col] = pd.to_numeric(df[col], errors="coerce") / 100
         df["protocol"] = df["protocol"].astype(str).str.replace("#", "", regex=False)
         return _salvar_df(df, "aereo")
-
     @task
     def load_aereo(_: str) -> int:
-        # CORREÇÃO: nome da tabela corrigido para "aereo_novo"
         return _carregar_sql("aereo", "aereo_novo")
-
     # -----------------------------------------------------------------------
     # 8. Ônibus
     # -----------------------------------------------------------------------
@@ -659,7 +610,6 @@ def onfly_etl():
         headers = _get_headers(token)
         url = f"{BASE_URL}/travel/order/bus-order?include=client"
         registros = coletar_todas_paginas(url, headers, "ônibus")
-
         lista = []
         for o in registros:
             client = (o.get("client") or {}).get("data") or {}
@@ -671,7 +621,6 @@ def onfly_etl():
             inbound_from = inbound.get("from") or {}
             inbound_to = inbound.get("to") or {}
             inbound_cia = inbound.get("cia") or {}
-
             lista.append({
                 "id": o.get("id"), "oldId": o.get("oldId"),
                 "protocol": o.get("protocol"), "bookingId": o.get("bookingId"),
@@ -750,7 +699,6 @@ def onfly_etl():
                 "inbound_cia_name": inbound_cia.get("name"),
                 "inbound_cia_displayName": inbound_cia.get("displayName"),
             })
-
         df = pd.DataFrame(lista)
         cols_divide = [
             "amount", "netAmount", "refunds", "discount", "additionalCharge",
@@ -761,11 +709,9 @@ def onfly_etl():
             df[col] = pd.to_numeric(df[col], errors="coerce") / 100
         df["protocol"] = df["protocol"].astype(str).str.replace("#", "", regex=False)
         return _salvar_df(df, "onibus")
-
     @task
     def load_onibus(_: str) -> int:
         return _carregar_sql("onibus", "onibus_novo")
-
     # -----------------------------------------------------------------------
     # 9. Hotel
     # -----------------------------------------------------------------------
@@ -778,33 +724,27 @@ def onfly_etl():
             f"guests.user,nextApprovalUsers,chargesAdditional,refundOrders,coupon"
         )
         registros = coletar_todas_paginas(url, headers, "hotel", pausa=0.5)
-
         lista = []
         for h in registros:
             client = (h.get("client") or {}).get("data") or {}
             cc = (h.get("costCenter") or {}).get("data") or {}
             address = h.get("address") or {}
-
             tags = (h.get("tags") or {}).get("data") or []
             tags_nomes = "; ".join(str(t.get("name") or "") for t in tags)
-
             next_approvers = (h.get("nextApprovalUsers") or {}).get("data") or []
             next_approvers_nomes = "; ".join(str(u.get("name") or "") for u in next_approvers)
             next_approvers_emails = "; ".join(str(u.get("email") or "") for u in next_approvers)
-
             flow = (h.get("approvalFlowHistory") or {}).get("data") or []
             flow_str = "; ".join(
                 f"{str(f.get('actionLabel') or '')}({str(f.get('date') or '')})"
                 for f in flow
             )
-
             guests = (h.get("guests") or {}).get("data") or []
             guests_nomes = "; ".join(str(g.get("name") or "") for g in guests)
             guests_emails = "; ".join(str(g.get("email") or "") for g in guests)
             guests_documentos = "; ".join(str(g.get("document") or "") for g in guests)
             guests_user_ids = "; ".join(str(g.get("userId") or "") for g in guests)
             guests_nationalities = "; ".join(str(g.get("nationality") or "") for g in guests)
-
             lista.append({
                 "id": h.get("id"), "oldId": h.get("oldId"),
                 "protocol": h.get("protocol"), "bookingId": h.get("bookingId"),
@@ -877,7 +817,6 @@ def onfly_etl():
                 "guests_userIds": guests_user_ids,
                 "guests_nationalities": guests_nationalities,
             })
-
         df = pd.DataFrame(lista)
         cols_divide = [
             "amount", "netAmount", "refunds", "discount",
@@ -887,32 +826,27 @@ def onfly_etl():
             df[col] = pd.to_numeric(df[col], errors="coerce") / 100
         df["protocol"] = df["protocol"].astype(str).str.replace("#", "", regex=False)
         return _salvar_df(df, "hotel")
-
     @task
     def load_hotel(_: str) -> int:
         return _carregar_sql("hotel", "hotel_novo")
-
     # -----------------------------------------------------------------------
     # 10. Fatura
     # -----------------------------------------------------------------------
     @task
     def extract_transform_fatura(token: str) -> str:
         headers = _get_headers(token)
-        # CORREÇÃO: typo "iclude" corrigido para "include"
         url = f"{BASE_URL}/financial/invoice/list/invoice?include=details"
         registros = coletar_todas_paginas(url, headers, "fatura")
-
         df = pd.DataFrame(registros)
         if "amount" in df.columns:
-            # CORREÇÃO: manter como float, sem formatar para string
             df["amount"] = pd.to_numeric(df["amount"], errors="coerce") / 100
         df.drop(columns=["description", "invoicedCompany"], inplace=True, errors="ignore")
+        # _salvar_df já aplica _normalizar_celula em todas as colunas object,
+        # serializando a coluna "details" (lista/dict/misto) para JSON string.
         return _salvar_df(df, "fatura")
-
     @task
     def load_fatura(_: str) -> int:
         return _carregar_sql("fatura", "fatura_novo")
-
     # -----------------------------------------------------------------------
     # 11. Créditos
     # -----------------------------------------------------------------------
@@ -921,9 +855,7 @@ def onfly_etl():
         headers = _get_headers(token)
         url = f"{BASE_URL}/credits/groupByConsumer"
         registros = coletar_todas_paginas(url, headers, "créditos")
-
         df = pd.json_normalize(registros)
-
         if "credits.data" in df.columns:
             df["credits.data"] = df["credits.data"].apply(
                 lambda x: x if isinstance(x, list) else []
@@ -939,7 +871,6 @@ def onfly_etl():
             )
         else:
             df_final = df.copy()
-
         if "credit.data" in df_final.columns:
             df_final["credit.data"] = df_final["credit.data"].apply(
                 lambda x: x if isinstance(x, list) else []
@@ -953,7 +884,6 @@ def onfly_etl():
                 ],
                 axis=1,
             )
-
         colunas_desejadas = [
             "id", "name", "createdAt", "updatedAt",
             "credit.id", "credit.totalAmount",
@@ -962,16 +892,13 @@ def onfly_etl():
         colunas_existentes = [c for c in colunas_desejadas if c in df_final.columns]
         df_creditos = df_final[colunas_existentes]
         return _salvar_df(df_creditos, "creditos")
-
     @task
     def load_creditos(_: str) -> int:
         return _carregar_sql("creditos", "creditos_novo")
-
     # -----------------------------------------------------------------------
     # Encadeamento
     # -----------------------------------------------------------------------
     token = autenticar()
-
     # Cada endpoint é uma extração independente seguida da carga.
     load_colaboradores(extract_transform_colaboradores(token))
     load_centro_custo(extract_transform_centro_custo(token))
@@ -983,6 +910,4 @@ def onfly_etl():
     load_hotel(extract_transform_hotel(token))
     load_fatura(extract_transform_fatura(token))
     load_creditos(extract_transform_creditos(token))
-
-
 dag_instance = onfly_etl()
